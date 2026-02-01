@@ -194,7 +194,7 @@ export function Planning() {
                   className="pl-10 bg-slate-700/50 border-slate-600 text-slate-200"
                 />
               </div>
-              <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white border-0">
                 <Filter className="w-4 h-4 mr-2" />
                 Filter
               </Button>
