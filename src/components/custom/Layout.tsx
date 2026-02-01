@@ -108,7 +108,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className="p-2 space-y-1 overflow-y-auto h-[calc(100vh-16rem)]">
+        <nav className="p-2 space-y-1 overflow-y-auto h-[calc(100vh-16rem)] sidebar-scrollbar">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path ||
