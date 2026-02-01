@@ -109,6 +109,7 @@ export function Planning() {
     startDuration: number;
     startTime: number;
   } | null>(null);
+  const [editingQuantity, setEditingQuantity] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [timelineStart, setTimelineStart] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
@@ -312,6 +313,35 @@ export function Planning() {
   // Delete plan
   const handleDeletePlan = (planId: string) => {
     setPlans(prev => prev.filter(p => p.id !== planId));
+  };
+
+  // Handle quantity edit start
+  const handleQuantityEditStart = (plan: Plan) => {
+    setEditingQuantity(`${plan.id}:${plan.quantity}`);
+  };
+
+  // Handle quantity change
+  const handleQuantityChange = (value: string) => {
+    setEditingQuantity(value);
+  };
+
+  // Handle quantity save
+  const handleQuantitySave = () => {
+    if (editingQuantity) {
+      const [planId, quantityStr] = editingQuantity.split(':');
+      const newQuantity = parseInt(quantityStr) || 0;
+      setPlans(prev => prev.map(p => 
+        p.id === planId 
+          ? { ...p, quantity: newQuantity }
+          : p
+      ));
+    }
+    setEditingQuantity(null);
+  };
+
+  // Handle quantity blur/cancel
+  const handleQuantityCancel = () => {
+    setEditingQuantity(null);
   };
 
   // Get die color based on type
@@ -766,7 +796,33 @@ export function Planning() {
                                     title={`${plan.dieCode}: ${plan.quantity} units | Status: ${plan.status} | Duration: ${plan.duration} | Start: ${plan.startTime}`}
                                   >
                                     <span className="text-xs font-medium text-white truncate">{plan.dieCode}</span>
-                                    <span className="text-white/80 text-[10px]">{plan.quantity} units</span>
+                                    
+                                    {/* Editable Quantity */}
+                                    {editingQuantity?.startsWith(plan.id) ? (
+                                      <input
+                                        type="number"
+                                        className="w-16 bg-white/20 text-white text-[10px] rounded px-1 py-0.5 focus:outline-none focus:bg-white/30"
+                                        value={editingQuantity.split(':')[1]}
+                                        onChange={(e) => handleQuantityChange(`${plan.id}:${e.target.value}`)}
+                                        onBlur={handleQuantitySave}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') handleQuantitySave();
+                                          if (e.key === 'Escape') handleQuantityCancel();
+                                        }}
+                                        autoFocus
+                                        min="0"
+                                      />
+                                    ) : (
+                                      <span 
+                                        className="text-white/80 text-[10px] cursor-text hover:text-white"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleQuantityEditStart(plan);
+                                        }}
+                                      >
+                                        {plan.quantity.toLocaleString()} units
+                                      </span>
+                                    )}
                                     
                                     {/* Left Resize Handle */}
                                     <div
