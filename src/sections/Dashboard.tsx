@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -302,57 +303,65 @@ export function Dashboard() {
 
       {/* Bottom Section - Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800 transition-colors cursor-pointer group">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-              <Factory className="w-5 h-5 text-blue-400" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white">View Capacity Plan</p>
-              <p className="text-xs text-slate-400">Check line utilization</p>
-            </div>
-            <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition-colors" />
-          </CardContent>
-        </Card>
+        <Link to="/capacity-gantt" className="block">
+          <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800 transition-colors cursor-pointer group h-full">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <Factory className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-white">View Capacity Plan</p>
+                <p className="text-xs text-slate-400">Check line utilization</p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition-colors" />
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800 transition-colors cursor-pointer group">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
-              <Flame className="w-5 h-5 text-orange-400" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white">Manage Dies</p>
-              <p className="text-xs text-slate-400">12 dies need attention</p>
-            </div>
-            <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-orange-400 transition-colors" />
-          </CardContent>
-        </Card>
+        <Link to="/dies" className="block">
+          <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800 transition-colors cursor-pointer group h-full">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                <Flame className="w-5 h-5 text-orange-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-white">Manage Dies</p>
+                <p className="text-xs text-slate-400">12 dies need attention</p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-orange-400 transition-colors" />
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800 transition-colors cursor-pointer group">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-green-400" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white">Run Optimization</p>
-              <p className="text-xs text-slate-400">AI-powered scheduling</p>
-            </div>
-            <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-green-400 transition-colors" />
-          </CardContent>
-        </Card>
+        <Link to="/planning" className="block">
+          <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800 transition-colors cursor-pointer group h-full">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-green-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-white">Run Optimization</p>
+                <p className="text-xs text-slate-400">AI-powered scheduling</p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-green-400 transition-colors" />
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800 transition-colors cursor-pointer group">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-              <Settings className="w-5 h-5 text-purple-400" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white">System Settings</p>
-              <p className="text-xs text-slate-400">Configure parameters</p>
-            </div>
-            <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-purple-400 transition-colors" />
-          </CardContent>
-        </Card>
+        <Link to="/settings" className="block">
+          <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800 transition-colors cursor-pointer group h-full">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                <Settings className="w-5 h-5 text-purple-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-white">System Settings</p>
+                <p className="text-xs text-slate-400">Configure parameters</p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-purple-400 transition-colors" />
+            </CardContent>
+          </Card>
+        </Link>
       </div>
     </div>
   );
