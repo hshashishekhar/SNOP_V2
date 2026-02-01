@@ -138,8 +138,8 @@ export function Lines() {
         <span
           className={`px-2 py-1 rounded-full text-xs font-medium ${
             row.original.isContinuous
-              ? 'bg-blue-100 text-blue-800'
-              : 'bg-gray-100 text-gray-800'
+              ? 'bg-blue-500/20 text-blue-400'
+              : 'bg-slate-500/20 text-slate-400'
           }`}
         >
           {row.original.isContinuous ? '24/7' : '5-Day'}
@@ -153,8 +153,8 @@ export function Lines() {
         <span
           className={`px-2 py-1 rounded-full text-xs font-medium ${
             row.original.isActive
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
+              ? 'bg-green-500/20 text-green-400'
+              : 'bg-slate-500/20 text-slate-400'
           }`}
         >
           {row.original.isActive ? 'Active' : 'Inactive'}
@@ -191,18 +191,18 @@ export function Lines() {
   ];
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="text-slate-200">Loading...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
             <Factory className="w-6 h-6 text-orange-500" />
             Production Lines
           </h2>
-          <p className="text-gray-500">Manage production lines and capacity settings</p>
+          <p className="text-slate-400">Manage production lines and capacity settings</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>

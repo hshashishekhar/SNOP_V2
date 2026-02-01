@@ -111,8 +111,8 @@ export function Divisions() {
         <span
           className={`px-2 py-1 rounded-full text-xs font-medium ${
             row.original.isActive
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
+              ? 'bg-green-500/20 text-green-400'
+              : 'bg-slate-500/20 text-slate-400'
           }`}
         >
           {row.original.isActive ? 'Active' : 'Inactive'}
@@ -149,18 +149,18 @@ export function Divisions() {
   ];
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="text-slate-200">Loading...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
             <Layers className="w-6 h-6 text-orange-500" />
             Divisions
           </h2>
-          <p className="text-gray-500">Manage divisions within locations</p>
+          <p className="text-slate-400">Manage divisions within locations</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>

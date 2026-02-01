@@ -68,21 +68,21 @@ export function DataTable<TData>({
             placeholder="Search..."
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="max-w-sm"
+            className="max-w-sm bg-slate-800/50 border-slate-700 text-slate-200 placeholder:text-slate-500"
           />
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-slate-400">
             Showing {table.getFilteredRowModel().rows.length} of {data.length} records
           </div>
         </div>
       )}
 
-      <div className="rounded-md border">
+      <div className="rounded-md border border-slate-700">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="border-slate-700 hover:bg-slate-800/50">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} className="text-slate-300">
                     {header.isPlaceholder ? null : (
                       <div
                         className={cn(
@@ -96,7 +96,7 @@ export function DataTable<TData>({
                           header.getContext()
                         )}
                         {header.column.getCanSort() && (
-                          <span className="text-gray-400">
+                          <span className="text-slate-500">
                             {header.column.getIsSorted() === 'asc' ? (
                               <ArrowUp className="w-4 h-4" />
                             ) : header.column.getIsSorted() === 'desc' ? (
@@ -119,9 +119,10 @@ export function DataTable<TData>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
+                  className="border-slate-700 hover:bg-slate-800/50"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="text-slate-300">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -134,7 +135,7 @@ export function DataTable<TData>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center text-gray-500"
+                  className="h-24 text-center text-slate-500"
                 >
                   No results found.
                 </TableCell>
@@ -151,6 +152,7 @@ export function DataTable<TData>({
             size="sm"
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
+            className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-slate-100"
           >
             <ChevronsLeft className="w-4 h-4" />
           </Button>
@@ -159,10 +161,11 @@ export function DataTable<TData>({
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
+            className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-slate-100"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-slate-400">
             Page {table.getState().pagination.pageIndex + 1} of{' '}
             {table.getPageCount()}
           </span>
@@ -171,6 +174,7 @@ export function DataTable<TData>({
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
+            className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-slate-100"
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
@@ -179,17 +183,18 @@ export function DataTable<TData>({
             size="sm"
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
+            className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-slate-100"
           >
             <ChevronsRight className="w-4 h-4" />
           </Button>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Rows per page:</span>
+          <span className="text-sm text-slate-400">Rows per page:</span>
           <select
             value={table.getState().pagination.pageSize}
             onChange={(e) => table.setPageSize(Number(e.target.value))}
-            className="border rounded px-2 py-1 text-sm"
+            className="border border-slate-700 bg-slate-800 text-slate-200 rounded px-2 py-1 text-sm"
           >
             {[5, 10, 20, 50, 100].map((size) => (
               <option key={size} value={size}>

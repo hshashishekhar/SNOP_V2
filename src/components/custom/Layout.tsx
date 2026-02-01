@@ -15,9 +15,16 @@ import {
   Search,
   Sun,
   ChevronDown,
+  ChevronRight,
   Zap,
   Menu,
   X,
+  Building2,
+  MapPin,
+  Layers,
+  Factory,
+  ClipboardCheck,
+  Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +41,7 @@ interface NavItem {
   label: string;
   path: string;
   icon: React.ElementType;
+  children?: { label: string; path: string; icon: React.ElementType }[];
 }
 
 const navItems: NavItem[] = [
@@ -46,11 +54,30 @@ const navItems: NavItem[] = [
   { label: 'Inventory', path: '/inventory', icon: Package },
   { label: 'Scenarios', path: '/scenarios', icon: GitBranch },
   { label: 'KPIs', path: '/kpis', icon: Activity },
+  { label: 'Shop Floor', path: '/shop-floor', icon: ClipboardCheck },
+  { label: 'User Management', path: '/users', icon: Users },
+  {
+    label: 'Organizations',
+    path: '/organizations',
+    icon: Building2,
+    children: [
+      { label: 'Locations', path: '/locations', icon: MapPin },
+      { label: 'Divisions', path: '/divisions', icon: Layers },
+      { label: 'Production Lines', path: '/lines', icon: Factory },
+    ],
+  },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['/organizations']);
   const location = useLocation();
+
+  const toggleMenu = (path: string) => {
+    setExpandedMenus((prev) =>
+      prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path]
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0f1c] flex">
@@ -84,23 +111,76 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <nav className="p-2 space-y-1 overflow-y-auto h-[calc(100vh-16rem)]">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path || 
+            const isActive = location.pathname === item.path ||
               (item.path !== '/' && location.pathname.startsWith(item.path));
-            
+            const hasChildren = item.children && item.children.length > 0;
+            const isExpanded = expandedMenus.includes(item.path);
+
             return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
-                  isActive
-                    ? 'bg-blue-600/20 text-blue-400 border-l-2 border-blue-500'
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+              <div key={item.path}>
+                {hasChildren ? (
+                  <>
+                    <button
+                      onClick={() => toggleMenu(item.path)}
+                      className={cn(
+                        'w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors',
+                        isActive
+                          ? 'bg-blue-600/20 text-blue-400 border-l-2 border-blue-500'
+                          : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-5 h-5 flex-shrink-0" />
+                        {isSidebarOpen && <span className="text-sm font-medium">{item.label}</span>}
+                      </div>
+                      {isSidebarOpen && (
+                        <ChevronRight
+                          className={cn(
+                            'w-4 h-4 transition-transform',
+                            isExpanded && 'rotate-90'
+                          )}
+                        />
+                      )}
+                    </button>
+                    {isExpanded && isSidebarOpen && (
+                      <div className="ml-4 mt-1 space-y-1">
+                        {item.children?.map((child) => {
+                          const ChildIcon = child.icon;
+                          const isChildActive = location.pathname === child.path;
+                          return (
+                            <NavLink
+                              key={child.path}
+                              to={child.path}
+                              className={cn(
+                                'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
+                                isChildActive
+                                  ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-500'
+                                  : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                              )}
+                            >
+                              <ChildIcon className="w-4 h-4 flex-shrink-0" />
+                              <span className="text-sm">{child.label}</span>
+                            </NavLink>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <NavLink
+                    to={item.path}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
+                      isActive
+                        ? 'bg-blue-600/20 text-blue-400 border-l-2 border-blue-500'
+                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                    )}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    {isSidebarOpen && <span className="text-sm font-medium">{item.label}</span>}
+                  </NavLink>
                 )}
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                {isSidebarOpen && <span className="text-sm font-medium">{item.label}</span>}
-              </NavLink>
+              </div>
             );
           })}
         </nav>

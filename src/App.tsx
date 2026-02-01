@@ -13,6 +13,12 @@ import { Inventory } from '@/sections/Inventory';
 import { Scenarios } from '@/sections/Scenarios';
 import { KPIs } from '@/sections/KPIs';
 import { Settings } from '@/sections/Settings';
+import { Organizations } from '@/sections/Organizations';
+import { Locations } from '@/sections/Locations';
+import { Divisions } from '@/sections/Divisions';
+import { Lines } from '@/sections/Lines';
+import { ShopFloor } from '@/sections/ShopFloor';
+import { UserManagement } from '@/sections/UserManagement';
 import { Spinner } from '@/components/ui/spinner';
 
 function App() {
@@ -74,7 +80,13 @@ function App() {
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/scenarios" element={<Scenarios />} />
             <Route path="/kpis" element={<KPIs />} />
+            <Route path="/shop-floor" element={<ShopFloor />} />
+            <Route path="/users" element={<UserManagement />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/organizations" element={<Organizations />} />
+            <Route path="/locations" element={<Locations />} />
+            <Route path="/divisions" element={<Divisions />} />
+            <Route path="/lines" element={<Lines />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>
