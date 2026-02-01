@@ -74,18 +74,18 @@ interface Plan {
   dieCode: string;
   dieName: string;
   quantity: number;
-  startTime: number;
-  duration: number;
+  startDate: number; // Absolute day number from a reference date
+  durationDays: number; // Duration in days
   status: 'planned' | 'confirmed' | 'in-progress' | 'completed';
   type: 'runner' | 'repeater' | 'stranger' | 'npd';
 }
 
-// Sample plans data
+// Sample plans data with absolute dates
 const initialPlans: Plan[] = [
-  { id: 'p1', lineId: 'F-01', dieId: 'die-1', dieCode: 'FD-8278', dieName: 'Crankshaft Die A', quantity: 933, startTime: 0, duration: 2, status: 'planned', type: 'runner' },
-  { id: 'p2', lineId: 'F-01', dieId: 'die-2', dieCode: 'FD-8330', dieName: 'Connecting Rod Die', quantity: 1890, startTime: 2, duration: 3, status: 'confirmed', type: 'stranger' },
-  { id: 'p3', lineId: 'F-02', dieId: 'die-3', dieCode: 'FD-8390', dieName: 'Cam Shaft Die', quantity: 830, startTime: 0, duration: 2, status: 'planned', type: 'stranger' },
-  { id: 'p4', lineId: 'F-02', dieId: 'die-4', dieCode: 'FD-8077', dieName: 'Gear Die Large', quantity: 1245, startTime: 2, duration: 3, status: 'in-progress', type: 'stranger' },
+  { id: 'p1', lineId: 'F-01', dieId: 'die-1', dieCode: 'FD-8278', dieName: 'Crankshaft Die A', quantity: 933, startDate: 0, durationDays: 14, status: 'planned', type: 'runner' },
+  { id: 'p2', lineId: 'F-01', dieId: 'die-2', dieCode: 'FD-8330', dieName: 'Connecting Rod Die', quantity: 1890, startDate: 14, durationDays: 21, status: 'confirmed', type: 'stranger' },
+  { id: 'p3', lineId: 'F-02', dieId: 'die-3', dieCode: 'FD-8390', dieName: 'Cam Shaft Die', quantity: 830, startDate: 0, durationDays: 14, status: 'planned', type: 'stranger' },
+  { id: 'p4', lineId: 'F-02', dieId: 'die-4', dieCode: 'FD-8077', dieName: 'Gear Die Large', quantity: 1245, startDate: 14, durationDays: 21, status: 'in-progress', type: 'stranger' },
 ];
 
 // Draggable die type
@@ -124,7 +124,7 @@ export function Planning() {
     dieCode: '',
     dieName: '',
     quantity: 0,
-    duration: 1,
+    durationDays: 14,
     type: 'runner' as Plan['type'],
     status: 'planned' as Plan['status'],
   });
@@ -134,31 +134,84 @@ export function Planning() {
 
   const selectedHorizonData = planningHorizons.find(h => h.id === selectedHorizon)!;
 
+  // Get timeline configuration based on horizon
+  const getTimelineConfig = () => {
+    switch (selectedHorizon) {
+      case 'aop':
+        return {
+          totalDays: 365 * 4, // 4 years
+          slotLabel: 'Year',
+          slotsPerUnit: 4, // 4 quarters per year
+          formatSlot: (idx: number) => `Year ${Math.floor(idx / 4) + 1} - Q${(idx % 4) + 1}`,
+          totalSlots: 48,
+        };
+      case 'snop':
+        return {
+          totalDays: 13 * 7, // 13 weeks
+          slotLabel: 'Week',
+          slotsPerUnit: 1,
+          formatSlot: (idx: number) => `Week ${idx + 1}`,
+          totalSlots: 13,
+        };
+      case 'mps':
+        return {
+          totalDays: 4 * 7, // 4 weeks
+          slotLabel: 'Day',
+          slotsPerUnit: 1,
+          formatSlot: (idx: number) => `Day ${idx + 1}`,
+          totalSlots: 28,
+        };
+      case 'execution':
+        return {
+          totalDays: 2, // 48 hours = 2 days
+          slotLabel: 'Hour',
+          slotsPerUnit: 12, // 12 slots per day (every 2 hours)
+          formatSlot: (idx: number) => {
+            const hours = idx % 24;
+            return `Hour ${hours}:00`;
+          },
+          totalSlots: 48,
+        };
+      default:
+        return {
+          totalDays: 13 * 7,
+          slotLabel: 'Week',
+          slotsPerUnit: 1,
+          formatSlot: (idx: number) => `Week ${idx + 1}`,
+          totalSlots: 13,
+        };
+    }
+  };
+
+  const timelineConfig = getTimelineConfig();
+
   // Generate timeline slots based on horizon
   const generateTimelineSlots = () => {
-    const slots: string[] = [];
-    const count = selectedHorizon === 'aop' ? 48 : selectedHorizon === 'snop' ? 13 : selectedHorizon === 'mps' ? 28 : 48;
-    
-    for (let i = 0; i < count; i++) {
-      if (selectedHorizon === 'aop') {
-        slots.push(`Year ${Math.floor(i / 4) + 1} - Q${(i % 4) + 1}`);
-      } else if (selectedHorizon === 'snop') {
-        slots.push(`Week ${i + 1}`);
-      } else if (selectedHorizon === 'mps') {
-        slots.push(`Day ${i + 1}`);
-      } else {
-        const hours = i % 24;
-        slots.push(`Hour ${hours}:00`);
-      }
-    }
-    return slots;
+    return Array.from({ length: timelineConfig.totalSlots }, (_, i) => timelineConfig.formatSlot(i));
+  };
+
+  // Convert absolute day to timeline slot position
+  const dayToSlotPosition = (day: number) => {
+    const daysPerSlot = timelineConfig.totalDays / timelineConfig.totalSlots;
+    return (day / daysPerSlot);
+  };
+
+  // Convert timeline slot position to absolute day
+  const slotPositionToDay = (position: number) => {
+    const daysPerSlot = timelineConfig.totalDays / timelineConfig.totalSlots;
+    return position * daysPerSlot;
   };
 
   const timeSlots = generateTimelineSlots();
 
-  // Get plans for a specific line
+  // Get plans for a specific line with converted positions
   const getLinePlans = (lineId: string) => {
-    return plans.filter(p => p.lineId === lineId);
+    return plans.filter(p => p.lineId === lineId).map(plan => ({
+      ...plan,
+      // Convert absolute days to timeline position for display
+      startTime: dayToSlotPosition(plan.startDate),
+      duration: dayToSlotPosition(plan.startDate + plan.durationDays) - dayToSlotPosition(plan.startDate),
+    }));
   };
 
   // Filter dies for the sidebar
@@ -197,13 +250,13 @@ export function Planning() {
     
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const dropPosition = (x / rect.width) * timeSlots.length;
-    const newStartTime = Math.max(0, Math.min(Math.floor(dropPosition), timeSlots.length - 1));
+    const dropPosition = (x / rect.width) * timelineConfig.totalSlots;
+    const newStartDate = slotPositionToDay(dropPosition);
 
     if (draggedPlan) {
       setPlans(prev => prev.map(p => 
         p.id === draggedPlan.id 
-          ? { ...p, lineId, startTime: newStartTime }
+          ? { ...p, lineId, startDate: newStartDate }
           : p
       ));
       setDraggedPlan(null);
@@ -215,8 +268,8 @@ export function Planning() {
         dieCode: draggedDie.code,
         dieName: draggedDie.name,
         quantity: 1000,
-        startTime: newStartTime,
-        duration: 2,
+        startDate: newStartDate,
+        durationDays: 14,
         status: 'planned',
         type: draggedDie.type as Plan['type'],
       };
@@ -228,12 +281,17 @@ export function Planning() {
   // Handle resize start
   const handleResizeStart = (e: React.MouseEvent, plan: Plan, side: 'left' | 'right') => {
     e.stopPropagation();
+    
+    // Calculate current position in slot coordinates
+    const currentStartSlot = dayToSlotPosition(plan.startDate);
+    const currentEndSlot = dayToSlotPosition(plan.startDate + plan.durationDays);
+    
     setResizingPlan({
       id: plan.id,
       side,
       startX: e.clientX,
-      startDuration: plan.duration,
-      startTime: plan.startTime,
+      startDuration: currentEndSlot - currentStartSlot,
+      startTime: currentStartSlot,
     });
     setDraggedPlan(null);
     setDraggedDie(null);
@@ -244,33 +302,37 @@ export function Planning() {
     if (!resizingPlan || !timelineRef.current) return;
     
     const rect = timelineRef.current.getBoundingClientRect();
-    const slotWidth = rect.width / timeSlots.length;
-    const deltaX = e.clientX - resizingPlan.startX;
-    const deltaSlots = deltaX / slotWidth;
+    const slotWidth = rect.width / timelineConfig.totalSlots;
+    const deltaSlots = (e.clientX - resizingPlan.startX) / slotWidth;
     
     if (resizingPlan.side === 'left') {
       // Left resize: adjust start time and duration
-      const newStartTime = Math.max(0, Math.round(resizingPlan.startTime + deltaSlots));
-      const maxNewStartTime = resizingPlan.startTime + resizingPlan.startDuration - 1;
-      const clampedStartTime = Math.min(newStartTime, maxNewStartTime);
-      const newDuration = resizingPlan.startDuration + resizingPlan.startTime - clampedStartTime;
+      const newStartSlot = Math.max(0, resizingPlan.startTime + deltaSlots);
+      const maxNewStartSlot = resizingPlan.startTime + resizingPlan.startDuration - 1;
+      const clampedStartSlot = Math.min(newStartSlot, maxNewStartSlot);
+      const newDurationSlot = resizingPlan.startDuration + resizingPlan.startTime - clampedStartSlot;
+      
+      // Convert back to absolute days
+      const newStartDate = slotPositionToDay(clampedStartSlot);
+      const newDurationDays = slotPositionToDay(newDurationSlot);
       
       setPlans(prev => prev.map(p => 
         p.id === resizingPlan.id 
-          ? { ...p, startTime: clampedStartTime, duration: Math.max(1, newDuration) }
+          ? { ...p, startDate: newStartDate, durationDays: Math.max(1, newDurationDays) }
           : p
       ));
     } else {
       // Right resize: only adjust duration
-      const newDuration = Math.max(1, Math.round(resizingPlan.startDuration + deltaSlots));
+      const newDurationSlot = Math.max(1, resizingPlan.startDuration + deltaSlots);
+      const newDurationDays = slotPositionToDay(newDurationSlot);
       
       setPlans(prev => prev.map(p => 
         p.id === resizingPlan.id 
-          ? { ...p, duration: newDuration }
+          ? { ...p, durationDays: Math.max(1, newDurationDays) }
           : p
       ));
     }
-  }, [resizingPlan, timeSlots.length]);
+  }, [resizingPlan, timelineConfig]);
 
   // Handle resize end
   const handleResizeEnd = useCallback(() => {
@@ -294,7 +356,8 @@ export function Planning() {
     const plan: Plan = {
       id: `p${Date.now()}`,
       ...newPlan,
-      startTime: 0,
+      startDate: 0,
+      durationDays: 14,
     };
     setPlans(prev => [...prev, plan]);
     setNewPlan({
@@ -303,7 +366,7 @@ export function Planning() {
       dieCode: '',
       dieName: '',
       quantity: 0,
-      duration: 1,
+      durationDays: 14,
       type: 'runner',
       status: 'planned',
     });
@@ -455,8 +518,8 @@ export function Planning() {
                 <Label className="text-slate-300">Duration ({selectedHorizonData.timeframe}s)</Label>
                 <Input
                   type="number"
-                  value={newPlan.duration}
-                  onChange={(e) => setNewPlan({ ...newPlan, duration: parseInt(e.target.value) || 1 })}
+                  value={newPlan.durationDays}
+                  onChange={(e) => setNewPlan({ ...newPlan, durationDays: parseInt(e.target.value) || 1 })}
                   className="bg-slate-700/50 border-slate-600 text-white"
                 />
               </div>
@@ -809,7 +872,7 @@ export function Planning() {
                                       width: `${(plan.duration / timeSlots.length) * 100}%`,
                                       minWidth: '60px',
                                     }}
-                                    title={`${plan.dieCode}: ${plan.quantity} units | Status: ${plan.status} | Duration: ${plan.duration} | Start: ${plan.startTime}`}
+                                    title={`${plan.dieCode}: ${plan.quantity} units | Status: ${plan.status} | Days: ${plan.startDate}-${plan.startDate + plan.durationDays - 1} (${plan.durationDays} days)`}
                                   >
                                     <span className="text-xs font-medium text-white truncate drop-shadow-md">{plan.dieCode}</span>
                                     
