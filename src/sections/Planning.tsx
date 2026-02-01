@@ -124,7 +124,7 @@ export function Planning() {
     dieCode: '',
     dieName: '',
     quantity: 0,
-    durationDays: 14,
+    durationDays: 7, // Default to 1 week
     type: 'runner' as Plan['type'],
     status: 'planned' as Plan['status'],
   });
@@ -133,6 +133,30 @@ export function Planning() {
   const { dies } = useDies();
 
   const selectedHorizonData = planningHorizons.find(h => h.id === selectedHorizon)!;
+
+  // Column width configuration
+  const COLUMN_WIDTH = 60; // Base width in pixels
+
+  // Helper function to snap position to nearest column
+  const snapToColumn = (position: number): number => {
+    return Math.round(position);
+  };
+
+  // Helper function to get default duration based on horizon
+  const getDefaultDuration = (): number => {
+    switch (selectedHorizon) {
+      case 'aop':
+        return 365 / 4; // 1 quarter in days (91.25 days)
+      case 'snop':
+        return 7; // 1 week in days
+      case 'mps':
+        return 1; // 1 day
+      case 'execution':
+        return 2 / 24; // 2 hours in days (2/24 = 0.0833 days)
+      default:
+        return 7;
+    }
+  };
 
   // Get timeline configuration based on horizon
   const getTimelineConfig = () => {
@@ -143,7 +167,7 @@ export function Planning() {
           slotLabel: 'Year',
           slotsPerUnit: 4, // 4 quarters per year
           formatSlot: (idx: number) => `Year ${Math.floor(idx / 4) + 1} - Q${(idx % 4) + 1}`,
-          totalSlots: 48,
+          totalSlots: 48, // Show all 48 quarters
         };
       case 'snop':
         return {
@@ -151,7 +175,7 @@ export function Planning() {
           slotLabel: 'Week',
           slotsPerUnit: 1,
           formatSlot: (idx: number) => `Week ${idx + 1}`,
-          totalSlots: 13,
+          totalSlots: 13, // Show all 13 weeks
         };
       case 'mps':
         return {
@@ -159,18 +183,18 @@ export function Planning() {
           slotLabel: 'Day',
           slotsPerUnit: 1,
           formatSlot: (idx: number) => `Day ${idx + 1}`,
-          totalSlots: 28,
+          totalSlots: 28, // Show all 28 days
         };
       case 'execution':
         return {
           totalDays: 2, // 48 hours = 2 days
           slotLabel: 'Hour',
-          slotsPerUnit: 12, // 12 slots per day (every 2 hours)
+          slotsPerUnit: 1,
           formatSlot: (idx: number) => {
-            const hours = idx % 24;
-            return `Hour ${hours}:00`;
+            const hours = idx * 2; // Every 2 hours
+            return `${hours}:00`;
           },
-          totalSlots: 48,
+          totalSlots: 25, // Show 25 slots (0, 2, 4, 6... 46, 48 hours = 0:00 to 48:00)
         };
       default:
         return {
@@ -184,8 +208,9 @@ export function Planning() {
   };
 
   const timelineConfig = getTimelineConfig();
+  const TOTAL_COLUMNS = timelineConfig.totalSlots; // Use actual total slots for each horizon
 
-  // Generate timeline slots based on horizon
+  // Generate timeline slots based on horizon - show ALL slots
   const generateTimelineSlots = () => {
     return Array.from({ length: timelineConfig.totalSlots }, (_, i) => timelineConfig.formatSlot(i));
   };
@@ -193,7 +218,7 @@ export function Planning() {
   // Convert absolute day to timeline slot position
   const dayToSlotPosition = (day: number) => {
     const daysPerSlot = timelineConfig.totalDays / timelineConfig.totalSlots;
-    return (day / daysPerSlot);
+    return day / daysPerSlot;
   };
 
   // Convert timeline slot position to absolute day
@@ -206,12 +231,23 @@ export function Planning() {
 
   // Get plans for a specific line with converted positions
   const getLinePlans = (lineId: string) => {
-    return plans.filter(p => p.lineId === lineId).map(plan => ({
-      ...plan,
+    return plans.filter(p => p.lineId === lineId).map(plan => {
       // Convert absolute days to timeline position for display
-      startTime: dayToSlotPosition(plan.startDate),
-      duration: dayToSlotPosition(plan.startDate + plan.durationDays) - dayToSlotPosition(plan.startDate),
-    }));
+      const startTime = dayToSlotPosition(plan.startDate);
+      const endTime = dayToSlotPosition(plan.startDate + plan.durationDays);
+      
+      // Clamp to timeline bounds to prevent overflow
+      const clampedStartTime = Math.max(0, Math.min(startTime, TOTAL_COLUMNS));
+      const clampedEndTime = Math.max(0, Math.min(endTime, TOTAL_COLUMNS));
+      const clampedDuration = clampedEndTime - clampedStartTime;
+      
+      return {
+        ...plan,
+        startTime: clampedStartTime,
+        duration: Math.max(0, clampedDuration),
+        isOverflow: endTime > TOTAL_COLUMNS || startTime < 0,
+      };
+    });
   };
 
   // Filter dies for the sidebar
@@ -250,8 +286,11 @@ export function Planning() {
     
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const dropPosition = (x / rect.width) * timelineConfig.totalSlots;
-    const newStartDate = slotPositionToDay(dropPosition);
+    const dropPosition = (x / rect.width) * TOTAL_COLUMNS;
+    
+    // Snap to nearest column
+    const snappedPosition = snapToColumn(dropPosition);
+    const newStartDate = slotPositionToDay(snappedPosition);
 
     if (draggedPlan) {
       setPlans(prev => prev.map(p => 
@@ -261,6 +300,7 @@ export function Planning() {
       ));
       setDraggedPlan(null);
     } else if (draggedDie) {
+      const defaultDuration = getDefaultDuration();
       const plan: Plan = {
         id: `p${Date.now()}`,
         lineId,
@@ -269,7 +309,7 @@ export function Planning() {
         dieName: draggedDie.name,
         quantity: 1000,
         startDate: newStartDate,
-        durationDays: 14,
+        durationDays: defaultDuration,
         status: 'planned',
         type: draggedDie.type as Plan['type'],
       };
@@ -302,7 +342,7 @@ export function Planning() {
     if (!resizingPlan || !timelineRef.current) return;
     
     const rect = timelineRef.current.getBoundingClientRect();
-    const slotWidth = rect.width / timelineConfig.totalSlots;
+    const slotWidth = rect.width / TOTAL_COLUMNS;
     const deltaSlots = (e.clientX - resizingPlan.startX) / slotWidth;
     
     if (resizingPlan.side === 'left') {
@@ -310,29 +350,35 @@ export function Planning() {
       const newStartSlot = Math.max(0, resizingPlan.startTime + deltaSlots);
       const maxNewStartSlot = resizingPlan.startTime + resizingPlan.startDuration - 1;
       const clampedStartSlot = Math.min(newStartSlot, maxNewStartSlot);
-      const newDurationSlot = resizingPlan.startDuration + resizingPlan.startTime - clampedStartSlot;
+      
+      // Snap to nearest column
+      const snappedStartSlot = snapToColumn(clampedStartSlot);
+      const newDurationSlot = resizingPlan.startDuration + resizingPlan.startTime - snappedStartSlot;
       
       // Convert back to absolute days
-      const newStartDate = slotPositionToDay(clampedStartSlot);
+      const newStartDate = slotPositionToDay(snappedStartSlot);
       const newDurationDays = slotPositionToDay(newDurationSlot);
       
       setPlans(prev => prev.map(p => 
         p.id === resizingPlan.id 
-          ? { ...p, startDate: newStartDate, durationDays: Math.max(1, newDurationDays) }
+          ? { ...p, startDate: newStartDate, durationDays: Math.max(getDefaultDuration(), newDurationDays) }
           : p
       ));
     } else {
       // Right resize: only adjust duration
       const newDurationSlot = Math.max(1, resizingPlan.startDuration + deltaSlots);
-      const newDurationDays = slotPositionToDay(newDurationSlot);
+      
+      // Snap to nearest column
+      const snappedDurationSlot = Math.max(1, snapToColumn(newDurationSlot));
+      const newDurationDays = slotPositionToDay(snappedDurationSlot);
       
       setPlans(prev => prev.map(p => 
         p.id === resizingPlan.id 
-          ? { ...p, durationDays: Math.max(1, newDurationDays) }
+          ? { ...p, durationDays: Math.max(getDefaultDuration(), newDurationDays) }
           : p
       ));
     }
-  }, [resizingPlan, timelineConfig]);
+  }, [resizingPlan, selectedHorizon, TOTAL_COLUMNS]);
 
   // Handle resize end
   const handleResizeEnd = useCallback(() => {
@@ -357,7 +403,7 @@ export function Planning() {
       id: `p${Date.now()}`,
       ...newPlan,
       startDate: 0,
-      durationDays: 14,
+      durationDays: getDefaultDuration(),
     };
     setPlans(prev => [...prev, plan]);
     setNewPlan({
@@ -366,7 +412,7 @@ export function Planning() {
       dieCode: '',
       dieName: '',
       quantity: 0,
-      durationDays: 14,
+      durationDays: 7,
       type: 'runner',
       status: 'planned',
     });
@@ -420,15 +466,16 @@ export function Planning() {
 
   // Get status badge
   const getStatusBadge = (status: string) => {
-    const statusColors: Record<string, string> = {
-      planned: 'bg-blue-500/20 text-blue-400 border-blue-500/50',
-      confirmed: 'bg-green-500/20 text-green-400 border-green-500/50',
-      'in-progress': 'bg-orange-500/20 text-orange-400 border-orange-500/50',
-      completed: 'bg-slate-500/20 text-slate-400 border-slate-500/50',
+    const statusConfig: Record<string, { bg: string; text: string; border: string; label: string }> = {
+      planned: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/50', label: 'Plan' },
+      confirmed: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/50', label: 'Conf' },
+      'in-progress': { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/50', label: 'Prog' },
+      completed: { bg: 'bg-slate-500/20', text: 'text-slate-400', border: 'border-slate-500/50', label: 'Done' },
     };
+    const config = statusConfig[status] || statusConfig.planned;
     return (
-      <Badge className={cn('border', statusColors[status] || statusColors.planned)}>
-        {status}
+      <Badge className={cn('border text-[10px] px-1.5 py-0', config.bg, config.text, config.border)}>
+        {config.label}
       </Badge>
     );
   };
@@ -748,49 +795,57 @@ export function Planning() {
           </Card>
 
           {/* Planning Gantt Chart */}
-          <Card className="bg-slate-800/50 border-slate-700 overflow-hidden">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
+          <Card className="bg-slate-800/50 border-slate-700 overflow-hidden shadow-lg">
+            <CardHeader className="pb-4 border-b border-slate-700/50">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3">
                   <GanttChart className="w-5 h-5 text-blue-400" />
                   <CardTitle className="text-base font-semibold text-white">
                     {selectedHorizonData.name} Planning - {selectedHorizonData.period}
                   </CardTitle>
-                  <Badge className="bg-slate-700 text-slate-300">{plans.length} plans</Badge>
+                  <Badge className="bg-blue-600/20 text-blue-400 border border-blue-500/50">{plans.length} plans</Badge>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 text-sm text-slate-400 mr-4">
-                    <Move className="w-4 h-4" />
+                <div className="flex items-center gap-4 text-xs text-slate-400">
+                  <div className="flex items-center gap-2">
+                    <Move className="w-3.5 h-3.5" />
                     <span>Drag to reschedule</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <ChevronLeftIcon className="w-4 h-4" />
-                    <ChevronRightIcon className="w-4 h-4" />
-                    <span>Drag edges to resize</span>
+                  <div className="flex items-center gap-2">
+                    <ChevronLeftIcon className="w-3.5 h-3.5" />
+                    <ChevronRightIcon className="w-3.5 h-3.5" />
+                    <span>Resize edges</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-2 py-1 bg-slate-700/50 rounded">
+                    <span className="font-medium">Zoom:</span>
+                    <span className="text-white">{zoomLevel}x</span>
                   </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto custom-scrollbar" ref={timelineRef}>
-                <div className="min-w-[1200px]">
+                <div style={{ minWidth: `${192 + (TOTAL_COLUMNS * COLUMN_WIDTH * zoomLevel) + 80}px` }}>
                   {/* Timeline Header */}
-                  <div className="flex border-b border-slate-600 bg-slate-800/80">
-                    <div className="w-48 p-3 text-sm font-semibold text-slate-200 sticky left-0 bg-slate-800/90 z-10 border-r border-slate-700">
+                  <div className="flex border-b-2 border-slate-600 bg-slate-800/80 h-12 sticky top-0 z-30">
+                    <div className="w-48 px-3 text-sm font-semibold text-slate-200 sticky left-0 bg-slate-800/90 z-10 border-r border-slate-700 flex items-center shadow-sm">
                       Line / Die
                     </div>
-                    <div className="flex-1 flex">
+                    <div className="flex h-12">
                       {timeSlots.map((slot, idx) => (
                         <div
                           key={idx}
-                          className="flex-1 p-2 text-xs font-medium text-slate-400 text-center border-l border-slate-700/50 bg-slate-800/50"
-                          style={{ minWidth: `${60 * zoomLevel}px` }}
+                          className={cn(
+                            "px-2 py-2 text-xs font-medium text-slate-400 text-center border-l border-slate-700/50 bg-slate-800/50 flex items-center justify-center",
+                            idx % 4 === 0 && "border-l-slate-600 border-l-2"
+                          )}
+                          style={{ width: `${COLUMN_WIDTH * zoomLevel}px`, minWidth: `${COLUMN_WIDTH * zoomLevel}px` }}
+                          title={slot}
                         >
-                          {slot}
+                          <span className="truncate">{slot}</span>
                         </div>
                       ))}
                     </div>
-                    <div className="w-20 p-3 text-xs font-semibold text-slate-400 text-right border-l border-slate-700 bg-slate-800/50">
+                    <div className="w-20 px-3 text-xs font-semibold text-slate-400 text-center border-l border-slate-700 bg-slate-800/50 flex items-center justify-center h-full">
                       Actions
                     </div>
                   </div>
@@ -800,31 +855,43 @@ export function Planning() {
                     const linePlans = getLinePlans(line.id);
                     return (
                       <div key={line.id} className="border-b border-slate-700/50">
-                        {/* Line Header */}
-                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/30 border-b border-slate-700/50 sticky top-0 z-10">
-                          <ChevronDown className="w-4 h-4 text-slate-500" />
-                          <Settings className="w-4 h-4 text-blue-400" />
-                          <span className="text-sm font-medium text-white">{line.code} - {line.name}</span>
-                          <Badge variant="outline" className="bg-slate-700/50 text-slate-300">
-                            {linePlans.length} plans
-                          </Badge>
+                        {/* Line Header - Full Width */}
+                        <div className="flex items-center h-12 bg-slate-800/50 border-b border-slate-700/50 sticky top-0 z-20">
+                          <div className="w-48 px-3 flex items-center gap-2 border-r border-slate-700">
+                            <ChevronDown className="w-4 h-4 text-slate-500" />
+                            <Settings className="w-4 h-4 text-blue-400" />
+                            <span className="text-sm font-medium text-white truncate">{line.code}</span>
+                          </div>
+                          <div className="flex-1 px-3 flex items-center gap-2">
+                            <span className="text-sm text-slate-300">{line.name}</span>
+                            <Badge variant="outline" className="bg-slate-700/50 text-slate-300 text-xs">
+                              {linePlans.length} {linePlans.length === 1 ? 'plan' : 'plans'}
+                            </Badge>
+                          </div>
+                          <div className="w-20 border-l border-slate-700" />
                         </div>
                         
                         {/* Die Rows */}
                         <div 
                           className={cn(
-                            'relative',
-                            draggedDie && 'bg-blue-500/5'
+                            'relative min-h-[48px]',
+                            draggedDie && 'bg-blue-500/10 border-2 border-dashed border-blue-500/50'
                           )}
                           onDragOver={handleDragOver}
                           onDrop={(e) => handleDropOnLine(line.id, e)}
                         >
                           {linePlans.length === 0 ? (
-                            <div className="p-4 text-center text-slate-500 text-sm">
+                            <div className="h-16 flex items-center justify-center text-center text-slate-500 text-sm border-b border-slate-700/30">
                               {draggedDie ? (
-                                <span className="text-blue-400">Drop here to add plan</span>
+                                <div className="flex items-center gap-2 text-blue-400 animate-pulse">
+                                  <Move className="w-4 h-4" />
+                                  <span className="font-medium">Drop die here to create plan</span>
+                                </div>
                               ) : (
-                                <>No plans scheduled. Drag a die here or create a new one.</>
+                                <div className="flex items-center gap-2">
+                                  <span>No plans scheduled.</span>
+                                  <span className="text-slate-600">Drag a die here to start planning.</span>
+                                </div>
                               )}
                             </div>
                           ) : (
@@ -832,8 +899,9 @@ export function Planning() {
                               <div
                                 key={plan.id}
                                 className={cn(
-                                  'flex items-center border-b border-slate-700/30 hover:bg-slate-800/30',
-                                  draggedDie && 'pointer-events-none opacity-50'
+                                  'flex items-center h-12 border-b border-slate-700/30 hover:bg-slate-800/30 transition-colors',
+                                  draggedDie && 'pointer-events-none opacity-50',
+                                  draggedPlan?.id === plan.id && 'bg-blue-500/10'
                                 )}
                                 draggable
                                 onDragStart={(e) => {
@@ -841,38 +909,58 @@ export function Planning() {
                                   handlePlanDragStart(plan);
                                 }}
                               >
-                                <div className="w-48 p-2 sticky left-0 bg-slate-800/50 z-10 flex items-center gap-2">
-                                  <GripVertical className="w-4 h-4 text-slate-500 cursor-grab" />
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <Badge className={cn('text-xs', getDieColor(plan.type))}>
+                                <div className="w-48 h-12 px-2 sticky left-0 bg-slate-800/90 z-10 flex items-center gap-2 border-r border-slate-700">
+                                  <GripVertical className="w-4 h-4 text-slate-500 cursor-grab flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1 mb-0.5">
+                                      <Badge className={cn('text-[10px] px-1 py-0', getDieColor(plan.type))}>
                                         {plan.type}
                                       </Badge>
-                                      <span className="text-xs text-slate-400">{plan.dieCode}</span>
+                                      <span className="text-xs text-slate-400 truncate">{plan.dieCode}</span>
                                     </div>
-                                    <span className="text-xs text-white">{plan.dieName}</span>
+                                    <span className="text-xs text-white truncate block">{plan.dieName}</span>
                                   </div>
                                 </div>
                                 
                                 {/* Plan Bar with Resize Handles */}
-                                <div className="flex-1 relative h-12" style={{ height: '48px' }}>
+                                <div className="relative h-12" style={{ height: '48px', width: `${TOTAL_COLUMNS * COLUMN_WIDTH * zoomLevel}px` }}>
+                                  {/* Grid lines for visual alignment */}
+                                  <div className="absolute inset-0 flex pointer-events-none">
+                                    {Array.from({ length: TOTAL_COLUMNS }).map((_, idx) => (
+                                      <div
+                                        key={idx}
+                                        className={cn(
+                                          "border-l",
+                                          idx % 4 === 0 ? "border-slate-700/30" : "border-slate-700/10"
+                                        )}
+                                        style={{ width: `${COLUMN_WIDTH * zoomLevel}px` }}
+                                      />
+                                    ))}
+                                  </div>
+
+                                  {/* Current time indicator (for first column as reference) */}
+                                  {plan.startTime === 0 && (
+                                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500/50 pointer-events-none z-10" />
+                                  )}
+
                                   <div
                                     className={cn(
-                                      'absolute top-2 h-8 rounded-md flex flex-col justify-center px-3 transition-all hover:shadow-md group',
+                                      'absolute top-2 h-8 rounded-md flex flex-col justify-center px-3 transition-all hover:shadow-lg group cursor-move',
                                       getDieColor(plan.type),
                                       plan.type === 'runner' && 'bg-gradient-to-r from-green-600 to-green-500',
                                       plan.type === 'repeater' && 'bg-gradient-to-r from-yellow-600 to-yellow-500',
                                       plan.type === 'stranger' && 'bg-gradient-to-r from-red-600 to-red-500',
                                       plan.type === 'npd' && 'bg-gradient-to-r from-blue-600 to-blue-500',
-                                      draggedPlan?.id === plan.id && 'opacity-50',
-                                      'border border-white/10'
+                                      draggedPlan?.id === plan.id && 'opacity-50 scale-105',
+                                      plan.isOverflow && 'ring-2 ring-orange-500/50',
+                                      'border border-white/20 shadow-md'
                                     )}
                                     style={{
-                                      left: `${(plan.startTime / timeSlots.length) * 100}%`,
-                                      width: `${(plan.duration / timeSlots.length) * 100}%`,
+                                      left: `${plan.startTime * COLUMN_WIDTH * zoomLevel}px`,
+                                      width: `${plan.duration * COLUMN_WIDTH * zoomLevel}px`,
                                       minWidth: '60px',
                                     }}
-                                    title={`${plan.dieCode}: ${plan.quantity} units | Status: ${plan.status} | Days: ${plan.startDate}-${plan.startDate + plan.durationDays - 1} (${plan.durationDays} days)`}
+                                    title={`${plan.dieCode}: ${plan.quantity} units | Status: ${plan.status} | Days: ${Math.round(plan.startDate)}-${Math.round(plan.startDate + plan.durationDays)} (${Math.round(plan.durationDays)} days)${plan.isOverflow ? ' | ⚠️ Exceeds timeline range' : ''}`}
                                   >
                                     <span className="text-xs font-medium text-white truncate drop-shadow-md">{plan.dieCode}</span>
                                     
@@ -905,33 +993,37 @@ export function Planning() {
                                     
                                     {/* Left Resize Handle */}
                                     <div
-                                      className="absolute left-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 border-r border-white/10"
+                                      className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-r from-black/30 to-transparent"
                                       onMouseDown={(e) => handleResizeStart(e, plan, 'left')}
+                                      onClick={(e) => e.stopPropagation()}
                                     >
-                                      <div className="w-1 h-4 bg-white/60 rounded-full" />
+                                      <div className="w-0.5 h-6 bg-white/80 rounded-full shadow-sm" />
                                     </div>
                                     
                                     {/* Right Resize Handle */}
                                     <div
-                                      className="absolute right-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 border-l border-white/10"
+                                      className="absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-l from-black/30 to-transparent"
                                       onMouseDown={(e) => handleResizeStart(e, plan, 'right')}
+                                      onClick={(e) => e.stopPropagation()}
                                     >
-                                      <div className="w-1 h-4 bg-white/60 rounded-full" />
+                                      <div className="w-0.5 h-6 bg-white/80 rounded-full shadow-sm" />
                                     </div>
                                   </div>
                                 </div>
                                 
                                 {/* Actions */}
-                                <div className="w-20 p-2 flex items-center justify-center border-l border-slate-700/50 gap-1">
-                                  {getStatusBadge(plan.status)}
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-6 w-6 text-slate-400 hover:text-red-400"
-                                    onClick={() => handleDeletePlan(plan.id)}
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </Button>
+                                <div className="w-20 h-12 px-2 flex items-center justify-center border-l border-slate-700/50 gap-1 bg-slate-800/30">
+                                  <div className="flex flex-col items-center gap-1">
+                                    {getStatusBadge(plan.status)}
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-5 w-5 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                                      onClick={() => handleDeletePlan(plan.id)}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             ))
@@ -944,19 +1036,25 @@ export function Planning() {
               </div>
               
               {/* Timeline Axis */}
-              <div className="flex border-t-2 border-slate-600 bg-slate-800/50">
-                <div className="w-48 p-2 text-xs text-slate-500 sticky left-0 bg-slate-800/90 z-10 border-r border-slate-700">
-                  Timeline
+              <div className="flex border-t-2 border-slate-600 bg-slate-800/50 sticky bottom-0 z-10">
+                <div className="w-48 p-2 text-xs text-slate-500 sticky left-0 bg-slate-800/90 z-10 border-r border-slate-700 flex items-center">
+                  <span className="font-medium">Timeline Scale</span>
                 </div>
-                <div className="flex-1 flex relative h-6">
+                <div className="flex relative h-8">
                   {timeSlots.map((slot, idx) => (
                     <div
                       key={idx}
-                      className="flex-1 border-l border-slate-700/30 relative"
-                      style={{ minWidth: `${60 * zoomLevel}px` }}
+                      className={cn(
+                        "border-l border-slate-700/30 relative flex items-end justify-center pb-1",
+                        idx % 4 === 0 && "border-l-slate-600"
+                      )}
+                      style={{ width: `${COLUMN_WIDTH * zoomLevel}px`, minWidth: `${COLUMN_WIDTH * zoomLevel}px` }}
                     >
                       {idx % 4 === 0 && (
-                        <div className="absolute bottom-0 left-0 w-0.5 h-2 bg-slate-500" />
+                        <div className="absolute bottom-0 left-0 w-0.5 h-3 bg-slate-500" />
+                      )}
+                      {idx % 2 === 0 && idx % 4 !== 0 && (
+                        <div className="absolute bottom-0 left-0 w-0.5 h-2 bg-slate-600" />
                       )}
                     </div>
                   ))}
