@@ -349,6 +349,50 @@
   .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: rgba(100, 116, 139, 0.7);
   }
+
+  /* Custom Dark Theme Scrollbar for Die Management */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(30, 41, 59, 0.5);
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 116, 139, 0.5);
+    border-radius: 4px;
+    border: 2px solid rgba(30, 41, 59, 0.5);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(148, 163, 184, 0.7);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:active {
+    background-color: rgba(148, 163, 184, 0.9);
+  }
+
+  /* Light theme override */
+  .light .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(226, 232, 240, 0.8);
+  }
+
+  .light .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.5);
+    border: 2px solid rgba(226, 232, 240, 0.8);
+  }
+
+  .light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(100, 116, 139, 0.7);
+  }
   
   /* Text Utilities */
   .text-balance {

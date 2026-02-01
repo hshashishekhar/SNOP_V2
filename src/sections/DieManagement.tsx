@@ -33,11 +33,21 @@ import {
   Calendar,
   FileText,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDies, useDieUnavailability } from '@/hooks/useDies';
 import { useLines } from '@/hooks/useLines';
 import type { Die, DieUnavailability, DieCategory, DieStatus } from '@/types';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+} from '@/components/ui/pagination';
 
 // Die Classification Types
 const dieClassifications = [
@@ -129,6 +139,10 @@ export function DieManagement() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
   // Dialog states
   const [addDieOpen, setAddDieOpen] = useState(false);
   const [addUnavailabilityOpen, setAddUnavailabilityOpen] = useState(false);
@@ -181,6 +195,18 @@ export function DieManagement() {
       die.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesStatus && matchesSearch;
   });
+  
+  // Paginate dies
+  const totalPages = Math.ceil(filteredDies.length / itemsPerPage);
+  const paginatedDies = filteredDies.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+  
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, categoryFilter, statusFilter]);
   
   // Get category badge
   const getCategoryBadge = (category: string) => {
@@ -535,7 +561,7 @@ export function DieManagement() {
             </div>
             
             {/* Die List */}
-            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+            <div className="space-y-3 max-h-[450px] overflow-y-auto custom-scrollbar">
               <p className="text-xs text-slate-500 flex items-center gap-1 mb-2">
                 <AlertTriangle className="w-3 h-3" />
                 Click on a die to manage its unavailability
@@ -545,7 +571,7 @@ export function DieManagement() {
               ) : filteredDies.length === 0 ? (
                 <div className="text-center text-slate-400 py-8">No dies found</div>
               ) : (
-                filteredDies.map((die) => (
+                paginatedDies.map((die) => (
                   <div
                     key={die.id}
                     className={cn(
@@ -600,6 +626,48 @@ export function DieManagement() {
                 ))
               )}
             </div>
+            
+            {/* Pagination */}
+            {filteredDies.length > 0 && (
+              <Pagination className="mt-4">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      className={cn(
+                        'border-slate-600 text-slate-300 hover:bg-slate-700',
+                        currentPage === 1 && 'opacity-50 pointer-events-none'
+                      )}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => setCurrentPage(page)}
+                        isActive={currentPage === page}
+                        className={cn(
+                          'border-slate-600',
+                          currentPage === page 
+                            ? 'bg-blue-600 border-blue-600 text-white' 
+                            : 'text-slate-300 hover:bg-slate-700'
+                        )}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      className={cn(
+                        'border-slate-600 text-slate-300 hover:bg-slate-700',
+                        currentPage === totalPages && 'opacity-50 pointer-events-none'
+                      )}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
           </CardContent>
         </Card>
         
