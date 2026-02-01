@@ -106,12 +106,18 @@ function HeatmapCell({ value, label }: HeatmapCellProps) {
 
 // Plant Performance Heatmap Data
 const plantData = [
-  { plant: 'Pune', forging: 88, ht: 79, machining: 85, overall: 84 },
-  { plant: 'Chakan', forging: 79, ht: 82, machining: 76, overall: 79 },
-  { plant: 'Nasik', forging: 74, ht: 71, machining: 72, overall: 72 },
-  { plant: 'Jejuri', forging: 68, ht: 65, machining: 64, overall: 66 },
-  { plant: 'Bengaluru', forging: 62, ht: 58, machining: 55, overall: 58 },
+  { plant: 'Pune', forging: 88, machining: 85, overall: 84 },
+  { plant: 'Chakan', forging: 79, machining: 76, overall: 79 },
+  { plant: 'Nasik', forging: 74, machining: 72, overall: 72 },
+  { plant: 'Jejuri', forging: 68, machining: 64, overall: 66 },
+  { plant: 'Bengaluru', forging: 62, machining: 55, overall: 58 },
 ];
+
+// Calculate Forging/Machining performance ratio
+const calculatePerformanceRatio = (forging: number, machining: number): number => {
+  if (machining === 0) return 0;
+  return Math.round((forging / machining) * 100);
+};
 
 export function Dashboard() {
   const [lastUpdated] = useState(new Date());
@@ -198,8 +204,8 @@ export function Dashboard() {
                   <tr className="text-left">
                     <th className="pb-4 text-sm font-medium text-slate-400">Plant</th>
                     <th className="pb-4 text-sm font-medium text-slate-400 text-center">Forging</th>
-                    <th className="pb-4 text-sm font-medium text-slate-400 text-center">HT</th>
                     <th className="pb-4 text-sm font-medium text-slate-400 text-center">Machining</th>
+                    <th className="pb-4 text-sm font-medium text-slate-400 text-center">F/M Ratio</th>
                     <th className="pb-4 text-sm font-medium text-slate-400 text-center">Overall</th>
                   </tr>
                 </thead>
@@ -214,12 +220,19 @@ export function Dashboard() {
                       </td>
                       <td className="py-3">
                         <div className="flex justify-center">
-                          <HeatmapCell value={row.ht} label="HT" />
+                          <HeatmapCell value={row.machining} label="Machining" />
                         </div>
                       </td>
                       <td className="py-3">
                         <div className="flex justify-center">
-                          <HeatmapCell value={row.machining} label="Machining" />
+                          <div className={cn(
+                            'px-3 py-2 rounded-md text-center text-sm font-medium min-w-[60px]',
+                            calculatePerformanceRatio(row.forging, row.machining) >= 100
+                              ? 'bg-green-500/80 text-white'
+                              : 'bg-yellow-500/80 text-white'
+                          )}>
+                            {calculatePerformanceRatio(row.forging, row.machining)}%
+                          </div>
                         </div>
                       </td>
                       <td className="py-3">

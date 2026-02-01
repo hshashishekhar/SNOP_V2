@@ -10,6 +10,11 @@ import {
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Download,
   Printer,
   BarChart3,
@@ -186,21 +191,32 @@ export function KPIs() {
                 const actual = 1000 + index * 50 + Math.random() * 100;
                 const target = 1050 + index * 40;
                 return (
-                  <div key={month} className="flex-1 flex flex-col items-center gap-2">
-                    <div className="w-full flex items-end justify-center gap-1" style={{ height: '200px' }}>
-                      {/* Target line */}
-                      <div
-                        className="w-2 bg-slate-600 rounded-t"
-                        style={{ height: `${(target / 1400) * 100}%` }}
-                      />
-                      {/* Actual bar */}
-                      <div
-                        className="w-6 bg-blue-500 rounded-t"
-                        style={{ height: `${(actual / 1400) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-slate-400">{month}</span>
-                  </div>
+                  <Tooltip key={month}>
+                    <TooltipTrigger asChild>
+                      <div className="flex-1 flex flex-col items-center gap-2 cursor-pointer">
+                        <div className="w-full flex items-end justify-center gap-1" style={{ height: '200px' }}>
+                          {/* Target line */}
+                          <div
+                            className="w-2 bg-slate-600 rounded-t"
+                            style={{ height: `${(target / 1400) * 100}%` }}
+                          />
+                          {/* Actual bar */}
+                          <div
+                            className="w-6 bg-blue-500 rounded-t"
+                            style={{ height: `${(actual / 1400) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-slate-400">{month}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="bg-slate-700 text-white border-slate-600">
+                      <div className="text-xs">
+                        <p className="font-semibold">{month}</p>
+                        <p>Actual: ₹{actual.toFixed(1)} Cr</p>
+                        <p>Target: ₹{target.toFixed(1)} Cr</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
                 );
               })}
             </div>
@@ -229,23 +245,34 @@ export function KPIs() {
           <CardContent>
             <div className="h-64 flex items-end justify-between gap-4">
               {lineUtilizationData.map((line) => (
-                <div key={line.line} className="flex-1 flex flex-col items-center gap-2">
-                  <div className="w-full flex items-end justify-center gap-1" style={{ height: '200px' }}>
-                    {line.forging > 0 && (
-                      <div
-                        className="w-6 bg-orange-500 rounded-t"
-                        style={{ height: `${line.forging}%` }}
-                      />
-                    )}
-                    {line.machining > 0 && (
-                      <div
-                        className="w-6 bg-cyan-500 rounded-t"
-                        style={{ height: `${line.machining}%` }}
-                      />
-                    )}
-                  </div>
-                  <span className="text-xs text-slate-400">{line.line}</span>
-                </div>
+                <Tooltip key={line.line}>
+                  <TooltipTrigger asChild>
+                    <div className="flex-1 flex flex-col items-center gap-2 cursor-pointer">
+                      <div className="w-full flex items-end justify-center gap-1" style={{ height: '200px' }}>
+                        {line.forging > 0 && (
+                          <div
+                            className="w-6 bg-orange-500 rounded-t"
+                            style={{ height: `${line.forging}%` }}
+                          />
+                        )}
+                        {line.machining > 0 && (
+                          <div
+                            className="w-6 bg-cyan-500 rounded-t"
+                            style={{ height: `${line.machining}%` }}
+                          />
+                        )}
+                      </div>
+                      <span className="text-xs text-slate-400">{line.line}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-slate-700 text-white border-slate-600">
+                    <div className="text-xs">
+                      <p className="font-semibold">{line.line}</p>
+                      {line.forging > 0 && <p>Forging: {line.forging}%</p>}
+                      {line.machining > 0 && <p>Machining: {line.machining}%</p>}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
               ))}
             </div>
             <div className="flex items-center justify-center gap-6 mt-4">
