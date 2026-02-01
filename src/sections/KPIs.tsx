@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -9,55 +8,56 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
+import { KPICard } from '@/components/custom/KPICard';
 import {
-  Activity,
-  TrendingUp,
-  TrendingDown,
   Download,
   Printer,
   BarChart3,
   Factory,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 // KPI Data
 const kpiData = [
   {
     title: 'Order Fulfillment (OTIF)',
-    value: '97.8',
+    value: 97.8,
     unit: '%',
-    target: '98%',
-    trend: 'up',
-    trendValue: '+1.2%',
-    progress: 97.8,
-    variant: 'green',
+    target: 98,
+    trend: 'up' as const,
+    changePercent: 1.2,
+    variant: 'success' as const,
+    tooltip: 'On-Time In-Full: Percentage of orders delivered on schedule and with complete quantities',
   },
   {
     title: 'Revenue',
-    value: '1247.5',
+    value: 1247.5,
     unit: 'Cr',
-    trend: 'up',
-    trendValue: '+8.3%',
-    variant: 'green',
+    trend: 'up' as const,
+    changePercent: 8.3,
+    variant: 'success' as const,
+    format: 'currency' as const,
+    tooltip: 'Total revenue in Crore INR for the selected period',
   },
   {
     title: 'Profit',
-    value: '186.2',
+    value: 186.2,
     unit: 'Cr',
-    trend: 'up',
-    trendValue: '+12.5%',
-    variant: 'green',
+    trend: 'up' as const,
+    changePercent: 12.5,
+    variant: 'success' as const,
+    format: 'currency' as const,
+    tooltip: 'Net profit margin in Crore INR',
   },
   {
     title: 'Capacity Utilization',
-    value: '84.3',
+    value: 84.3,
     unit: '%',
-    target: '85%',
-    trend: 'down',
-    trendValue: '+2.1%',
-    progress: 84.3,
-    variant: 'yellow',
+    target: 85,
+    trend: 'down' as const,
+    changePercent: 2.1,
+    variant: 'warning' as const,
+    showProgress: true,
+    tooltip: 'Overall equipment effectiveness and capacity utilization across all production lines',
   },
 ];
 
@@ -106,49 +106,19 @@ export function KPIs() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiData.map((kpi) => (
-          <Card
+          <KPICard
             key={kpi.title}
-            className={cn(
-              'bg-slate-800/50 border-slate-700',
-              kpi.variant === 'green' && 'border-t-4 border-t-green-500',
-              kpi.variant === 'yellow' && 'border-t-4 border-t-yellow-500',
-              kpi.variant === 'red' && 'border-t-4 border-t-red-500'
-            )}
-          >
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-slate-400 mb-1">{kpi.title}</p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold text-white">{kpi.value}</span>
-                    <span className="text-sm text-slate-400">{kpi.unit}</span>
-                  </div>
-                  {kpi.target && (
-                    <p className="text-xs text-slate-500 mt-1">Target: {kpi.target}</p>
-                  )}
-                </div>
-                <div className={cn(
-                  'flex items-center gap-1 text-sm',
-                  kpi.trend === 'up' ? 'text-green-400' : 'text-red-400'
-                )}>
-                  {kpi.trend === 'up' ? (
-                    <TrendingUp className="w-4 h-4" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4" />
-                  )}
-                  <span>{kpi.trendValue}</span>
-                </div>
-              </div>
-              {kpi.progress && (
-                <div className="mt-3">
-                  <Progress
-                    value={kpi.progress}
-                    className="h-1.5 bg-slate-700"
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            title={kpi.title}
+            value={kpi.value}
+            unit={kpi.unit}
+            target={kpi.target}
+            trend={kpi.trend}
+            changePercent={kpi.changePercent}
+            variant={kpi.variant}
+            format={kpi.format as 'number' | 'currency' | 'percentage' | 'decimal' | undefined}
+            showProgress={kpi.showProgress}
+            tooltip={kpi.tooltip}
+          />
         ))}
       </div>
 
@@ -247,56 +217,28 @@ export function KPIs() {
 
       {/* Additional Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-sm font-medium text-slate-300">On-Time Delivery</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-3xl font-bold text-white">94.5%</p>
-                <p className="text-xs text-green-400 mt-1">+2.3% vs last month</p>
-              </div>
-              <div className="w-16 h-16 rounded-full border-4 border-green-500 flex items-center justify-center">
-                <span className="text-sm font-bold text-green-400">A</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-sm font-medium text-slate-300">Quality Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-3xl font-bold text-white">99.2%</p>
-                <p className="text-xs text-green-400 mt-1">+0.5% vs last month</p>
-              </div>
-              <div className="w-16 h-16 rounded-full border-4 border-green-500 flex items-center justify-center">
-                <span className="text-sm font-bold text-green-400">A+</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-sm font-medium text-slate-300">Safety Incidents</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-3xl font-bold text-white">0</p>
-                <p className="text-xs text-green-400 mt-1">No incidents this month</p>
-              </div>
-              <div className="w-16 h-16 rounded-full border-4 border-green-500 flex items-center justify-center">
-                <span className="text-sm font-bold text-green-400">A+</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <KPICard
+          title="On-Time Delivery"
+          value={94.5}
+          format="percentage"
+          changePercent={2.3}
+          variant="success"
+          tooltip="Percentage of orders delivered on or before the promised date"
+        />
+        <KPICard
+          title="Quality Rate"
+          value={99.2}
+          format="percentage"
+          changePercent={0.5}
+          variant="success"
+          tooltip="First-pass yield rate - percentage of products passing quality inspection on first attempt"
+        />
+        <KPICard
+          title="Safety Incidents"
+          value={0}
+          variant="success"
+          tooltip="Number of reportable safety incidents in the selected period"
+        />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
-import { TrendingUp, TrendingDown, Minus, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, AlertCircle, CheckCircle2, Clock, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 
@@ -46,6 +47,7 @@ export interface KPICardProps extends VariantProps<typeof kpiCardVariants> {
   subtitle?: string;
   loading?: boolean;
   metric?: string;
+  tooltip?: string;
 }
 
 export function KPICard({
@@ -66,6 +68,7 @@ export function KPICard({
   alertMessage,
   subtitle,
   loading = false,
+  tooltip,
 }: KPICardProps) {
   const formatValue = (val: number | string): string => {
     if (typeof val === 'string') return val;
@@ -145,9 +148,20 @@ export function KPICard({
       </div>
 
       <CardHeader className="flex flex-row items-center justify-between pb-2 relative">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {title}
-        </CardTitle>
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground cursor-help">
+                {title}
+              </CardTitle>
+            </TooltipTrigger>
+            {tooltip && (
+              <TooltipContent>
+                <p>{tooltip}</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
         <div className="flex items-center gap-2">
           {alert && (
             <AlertCircle className="w-4 h-4 text-bf-red animate-pulse" />
