@@ -8,58 +8,82 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { KPICard } from '@/components/custom/KPICard';
+import { Progress } from '@/components/ui/progress';
 import {
   Download,
   Printer,
   BarChart3,
   Factory,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-// KPI Data
-const kpiData = [
-  {
-    title: 'Order Fulfillment (OTIF)',
-    value: 97.8,
-    unit: '%',
-    target: 98,
-    trend: 'up' as const,
-    changePercent: 1.2,
-    variant: 'success' as const,
-    tooltip: 'On-Time In-Full: Percentage of orders delivered on schedule and with complete quantities',
-  },
-  {
-    title: 'Revenue',
-    value: 1247.5,
-    unit: 'Cr',
-    trend: 'up' as const,
-    changePercent: 8.3,
-    variant: 'success' as const,
-    format: 'currency' as const,
-    tooltip: 'Total revenue in Crore INR for the selected period',
-  },
-  {
-    title: 'Profit',
-    value: 186.2,
-    unit: 'Cr',
-    trend: 'up' as const,
-    changePercent: 12.5,
-    variant: 'success' as const,
-    format: 'currency' as const,
-    tooltip: 'Net profit margin in Crore INR',
-  },
-  {
-    title: 'Capacity Utilization',
-    value: 84.3,
-    unit: '%',
-    target: 85,
-    trend: 'down' as const,
-    changePercent: 2.1,
-    variant: 'warning' as const,
-    showProgress: true,
-    tooltip: 'Overall equipment effectiveness and capacity utilization across all production lines',
-  },
-];
+// KPI Card Component matching Dashboard styling
+interface KPICardProps {
+  title: string;
+  value: string | number;
+  unit?: string;
+  target?: string | number;
+  trend?: 'up' | 'down';
+  trendValue?: string;
+  variant?: 'green' | 'yellow' | 'red' | 'blue';
+  showProgress?: boolean;
+  progressValue?: number;
+  tooltip?: string;
+}
+
+function KPICard({
+  title,
+  value,
+  unit,
+  target,
+  trend,
+  trendValue,
+  variant = 'green',
+  showProgress,
+  progressValue,
+}: KPICardProps) {
+  const variantStyles = {
+    green: 'border-t-4 border-t-green-500',
+    yellow: 'border-t-4 border-t-yellow-500',
+    red: 'border-t-4 border-t-red-500',
+    blue: 'border-t-4 border-t-blue-500',
+  };
+
+  return (
+    <Card className={cn('bg-slate-800/50 border-slate-700', variantStyles[variant])}>
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm text-slate-400 mb-1">{title}</p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold text-white">{value}</span>
+              {unit && <span className="text-sm text-slate-400">{unit}</span>}
+            </div>
+            {target && (
+              <p className="text-xs text-slate-500 mt-1">Target: {target}</p>
+            )}
+          </div>
+          {trend && trendValue && (
+            <div className={cn(
+              'flex items-center gap-1 text-sm',
+              trend === 'up' ? 'text-green-400' : 'text-red-400'
+            )}>
+              {trend === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+              <span>{trendValue}</span>
+            </div>
+          )}
+        </div>
+        {showProgress && progressValue !== undefined && (
+          <div className="mt-3">
+            <Progress value={progressValue} className="h-1.5 bg-slate-700" />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 // Line Utilization Data
 const lineUtilizationData = [
@@ -79,7 +103,7 @@ export function KPIs() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-40 bg-slate-700/50 border-slate-600 text-slate-200">
+          <SelectTrigger className="w-40 bg-slate-800/50 border-slate-700 text-slate-200">
             <SelectValue placeholder="Select period" />
           </SelectTrigger>
           <SelectContent className="bg-slate-800 border-slate-700">
@@ -92,34 +116,57 @@ export function KPIs() {
         </Select>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white border-0">
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white border-0">
             <Printer className="w-4 h-4 mr-2" />
             Print
           </Button>
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards - Main Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpiData.map((kpi) => (
-          <KPICard
-            key={kpi.title}
-            title={kpi.title}
-            value={kpi.value}
-            unit={kpi.unit}
-            target={kpi.target}
-            trend={kpi.trend}
-            changePercent={kpi.changePercent}
-            variant={kpi.variant}
-            format={kpi.format as 'number' | 'currency' | 'percentage' | 'decimal' | undefined}
-            showProgress={kpi.showProgress}
-            tooltip={kpi.tooltip}
-          />
-        ))}
+        <KPICard
+          title="Order Fulfillment (OTIF)"
+          value="97.8"
+          unit="%"
+          target="98%"
+          trend="up"
+          trendValue="+1.2%"
+          variant="green"
+          showProgress
+          progressValue={97.8}
+        />
+        <KPICard
+          title="Revenue"
+          value="1247.5"
+          unit="Cr"
+          trend="up"
+          trendValue="+8.3%"
+          variant="green"
+        />
+        <KPICard
+          title="Profit"
+          value="186.2"
+          unit="Cr"
+          trend="up"
+          trendValue="+12.5%"
+          variant="green"
+        />
+        <KPICard
+          title="Capacity Utilization"
+          value="84.3"
+          unit="%"
+          target="85%"
+          trend="down"
+          trendValue="-2.1%"
+          variant="yellow"
+          showProgress
+          progressValue={84.3}
+        />
       </div>
 
       {/* Charts Section */}
@@ -219,25 +266,24 @@ export function KPIs() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <KPICard
           title="On-Time Delivery"
-          value={94.5}
-          format="percentage"
-          changePercent={2.3}
-          variant="success"
-          tooltip="Percentage of orders delivered on or before the promised date"
+          value="94.5"
+          unit="%"
+          trend="up"
+          trendValue="+2.3%"
+          variant="green"
         />
         <KPICard
           title="Quality Rate"
-          value={99.2}
-          format="percentage"
-          changePercent={0.5}
-          variant="success"
-          tooltip="First-pass yield rate - percentage of products passing quality inspection on first attempt"
+          value="99.2"
+          unit="%"
+          trend="up"
+          trendValue="+0.5%"
+          variant="green"
         />
         <KPICard
           title="Safety Incidents"
-          value={0}
-          variant="success"
-          tooltip="Number of reportable safety incidents in the selected period"
+          value="0"
+          variant="green"
         />
       </div>
     </div>
