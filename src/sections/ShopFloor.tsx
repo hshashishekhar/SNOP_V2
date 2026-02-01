@@ -128,17 +128,18 @@ export function ShopFloor() {
         </div>
         <div className="flex items-center gap-2">
           <Button 
-            variant="outline" 
+            variant="default" 
             size="sm" 
-            className="gap-2"
+            className="gap-2 bg-bf-orange hover:bg-bf-orange-light"
             onClick={() => setIsDowntimeDialogOpen(true)}
           >
             <AlertTriangle className="w-4 h-4" />
             Report Downtime
           </Button>
           <Button 
+            variant="default" 
             size="sm" 
-            className="gap-2"
+            className="gap-2 bg-bf-blue hover:bg-bf-blue/90"
             onClick={() => setIsConfirmationDialogOpen(true)}
           >
             <CheckCircle2 className="w-4 h-4" />
@@ -179,15 +180,15 @@ export function ShopFloor() {
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex bg-slate-800/50 border border-slate-700">
-          <TabsTrigger value="confirmation" className="gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+          <TabsTrigger value="confirmation" className="gap-2 text-slate-300 data-[state=active]:bg-bf-blue data-[state=active]:text-white hover:text-white">
             <CheckCircle2 className="w-4 h-4" />
             <span className="hidden sm:inline">Production Confirmation</span>
           </TabsTrigger>
-          <TabsTrigger value="downtime" className="gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+          <TabsTrigger value="downtime" className="gap-2 text-slate-300 data-[state=active]:bg-bf-orange data-[state=active]:text-white hover:text-white">
             <AlertTriangle className="w-4 h-4" />
             <span className="hidden sm:inline">Downtime Reports</span>
           </TabsTrigger>
-          <TabsTrigger value="variance" className="gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+          <TabsTrigger value="variance" className="gap-2 text-slate-300 data-[state=active]:bg-bf-green data-[state=active]:text-white hover:text-white">
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">Variance Analysis</span>
           </TabsTrigger>
@@ -424,10 +425,10 @@ export function ShopFloor() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsConfirmationDialogOpen(false)} className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-slate-100">
+            <Button variant="outline" onClick={() => setIsConfirmationDialogOpen(false)} className="border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-slate-100">
               Cancel
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">Submit Confirmation</Button>
+            <Button className="bg-bf-blue hover:bg-bf-blue/90">Submit Confirmation</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -475,10 +476,10 @@ export function ShopFloor() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDowntimeDialogOpen(false)} className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-slate-100">
+            <Button variant="outline" onClick={() => setIsDowntimeDialogOpen(false)} className="border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-slate-100">
               Cancel
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">Submit Report</Button>
+            <Button className="bg-bf-orange hover:bg-bf-orange-light">Submit Report</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
