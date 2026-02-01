@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,8 @@ import {
   Move,
   GripVertical,
   Wrench,
+  ChevronRight as ChevronRightIcon,
+  ChevronLeft as ChevronLeftIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLines } from '@/hooks/useLines';
@@ -100,10 +102,13 @@ export function Planning() {
   const [addPlanOpen, setAddPlanOpen] = useState(false);
   const [draggedPlan, setDraggedPlan] = useState<Plan | null>(null);
   const [draggedDie, setDraggedDie] = useState<DraggableDie | null>(null);
+  const [resizingPlan, setResizingPlan] = useState<{ id: string; startX: number; startDuration: number } | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [timelineStart, setTimelineStart] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  
+  const timelineRef = useRef<HTMLDivElement>(null);
 
   // Form state
   const [newPlan, setNewPlan] = useState({
@@ -160,8 +165,10 @@ export function Planning() {
 
   // Handle plan drag start
   const handlePlanDragStart = (plan: Plan) => {
-    setDraggedPlan(plan);
-    setDraggedDie(null);
+    if (!resizingPlan) {
+      setDraggedPlan(plan);
+      setDraggedDie(null);
+    }
   };
 
   // Handle die drag start
@@ -178,14 +185,14 @@ export function Planning() {
   // Handle drop on line timeline
   const handleDropOnLine = (lineId: string, e: React.DragEvent) => {
     e.preventDefault();
-    const timelineWidth = e.currentTarget.scrollWidth;
-    const rect = e.currentTarget.getBoundingClientRect();
+    if (!timelineRef.current) return;
+    
+    const rect = timelineRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const dropPosition = (x / rect.width) * timeSlots.length;
     const newStartTime = Math.max(0, Math.floor(dropPosition));
 
     if (draggedPlan) {
-      // Moving an existing plan
       setPlans(prev => prev.map(p => 
         p.id === draggedPlan.id 
           ? { ...p, lineId, startTime: newStartTime }
@@ -193,7 +200,6 @@ export function Planning() {
       ));
       setDraggedPlan(null);
     } else if (draggedDie) {
-      // Dropping a new die to create a plan
       const plan: Plan = {
         id: `p${Date.now()}`,
         lineId,
@@ -211,32 +217,51 @@ export function Planning() {
     }
   };
 
-  // Handle drop on timeline slot (for precise positioning)
-  const handleDropOnTimeline = (lineId: string, slotIndex: number) => {
-    if (draggedPlan) {
-      setPlans(prev => prev.map(p => 
-        p.id === draggedPlan.id 
-          ? { ...p, lineId, startTime: slotIndex }
-          : p
-      ));
-      setDraggedPlan(null);
-    } else if (draggedDie) {
-      const plan: Plan = {
-        id: `p${Date.now()}`,
-        lineId,
-        dieId: draggedDie.id,
-        dieCode: draggedDie.code,
-        dieName: draggedDie.name,
-        quantity: 1000,
-        startTime: slotIndex,
-        duration: 2,
-        status: 'planned',
-        type: draggedDie.type as Plan['type'],
-      };
-      setPlans(prev => [...prev, plan]);
-      setDraggedDie(null);
-    }
+  // Handle resize start
+  const handleResizeStart = (e: React.MouseEvent, plan: Plan) => {
+    e.stopPropagation();
+    setResizingPlan({
+      id: plan.id,
+      startX: e.clientX,
+      startDuration: plan.duration,
+    });
+    setDraggedPlan(null);
+    setDraggedDie(null);
   };
+
+  // Handle resize move
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!resizingPlan || !timelineRef.current) return;
+    
+    const rect = timelineRef.current.getBoundingClientRect();
+    const slotWidth = rect.width / timeSlots.length;
+    const deltaX = e.clientX - resizingPlan.startX;
+    const deltaSlots = deltaX / slotWidth;
+    const newDuration = Math.max(1, Math.round(resizingPlan.startDuration + deltaSlots));
+    
+    setPlans(prev => prev.map(p => 
+      p.id === resizingPlan.id 
+        ? { ...p, duration: newDuration }
+        : p
+    ));
+  }, [resizingPlan, timeSlots.length]);
+
+  // Handle resize end
+  const handleResizeEnd = useCallback(() => {
+    setResizingPlan(null);
+  }, []);
+
+  // Add mouse move and up listeners for resizing
+  useEffect(() => {
+    if (resizingPlan) {
+      window.addEventListener('mousemove', handleResizeMove);
+      window.addEventListener('mouseup', handleResizeEnd);
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove);
+        window.removeEventListener('mouseup', handleResizeEnd);
+      };
+    }
+  }, [resizingPlan, handleResizeMove, handleResizeEnd]);
 
   // Add new plan
   const handleAddPlan = () => {
@@ -609,11 +634,15 @@ export function Planning() {
                     <Move className="w-4 h-4" />
                     <span>Drag to reschedule</span>
                   </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <ChevronRightIcon className="w-4 h-4" />
+                    <span>Drag edge to resize</span>
+                  </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" ref={timelineRef}>
                 <div className="min-w-[1200px]">
                   {/* Timeline Header */}
                   <div className="flex border-b border-slate-700 bg-slate-800/30">
@@ -689,11 +718,11 @@ export function Planning() {
                                   </div>
                                 </div>
                                 
-                                {/* Plan Bar */}
+                                {/* Plan Bar with Resize Handle */}
                                 <div className="flex-1 relative h-12" style={{ height: '48px' }}>
                                   <div
                                     className={cn(
-                                      'absolute top-2 h-8 rounded-md flex flex-col justify-center px-3 cursor-move transition-all hover:brightness-110 hover:shadow-lg',
+                                      'absolute top-2 h-8 rounded-md flex flex-col justify-center px-3 transition-all hover:brightness-110 hover:shadow-lg group',
                                       getDieColor(plan.type),
                                       draggedPlan?.id === plan.id && 'opacity-50'
                                     )}
@@ -702,10 +731,18 @@ export function Planning() {
                                       width: `${(plan.duration / timeSlots.length) * 100}%`,
                                       minWidth: '60px',
                                     }}
-                                    title={`${plan.dieCode}: ${plan.quantity} units | Status: ${plan.status}`}
+                                    title={`${plan.dieCode}: ${plan.quantity} units | Status: ${plan.status} | Duration: ${plan.duration}`}
                                   >
                                     <span className="text-xs font-medium text-white truncate">{plan.dieCode}</span>
                                     <span className="text-white/80 text-[10px]">{plan.quantity} units</span>
+                                    
+                                    {/* Resize Handle */}
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart(e, plan)}
+                                    >
+                                      <div className="w-1 h-4 bg-white/50 rounded-full" />
+                                    </div>
                                   </div>
                                 </div>
                                 
