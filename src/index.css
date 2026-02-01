@@ -1,0 +1,369 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Bharat Forge Light Theme - Industrial Mission Control */
+    --background: 220 20% 98%;
+    --foreground: 220 30% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 30% 10%;
+    
+    /* Primary: Deep Industrial Blue */
+    --primary: 215 60% 25%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary: Industrial Gray */
+    --secondary: 220 15% 92%;
+    --secondary-foreground: 220 30% 15%;
+    
+    /* Muted: Light Gray */
+    --muted: 220 15% 95%;
+    --muted-foreground: 220 10% 45%;
+    
+    /* Accent: Safety Orange */
+    --accent: 24 95% 53%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Destructive: Industrial Red */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Success: Industrial Green */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Warning: Amber */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    /* Info: Steel Blue */
+    --info: 207 90% 54%;
+    --info-foreground: 0 0% 100%;
+    
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 215 60% 40%;
+    --radius: 0.5rem;
+    
+    /* Sidebar: Dark Industrial */
+    --sidebar-background: 220 25% 12%;
+    --sidebar-foreground: 220 15% 85%;
+    --sidebar-primary: 215 60% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 20% 18%;
+    --sidebar-accent-foreground: 220 15% 90%;
+    --sidebar-border: 220 20% 20%;
+    --sidebar-ring: 215 60% 40%;
+    
+    /* Bharat Forge Brand Colors */
+    --bf-navy: 215 60% 20%;
+    --bf-blue: 215 60% 35%;
+    --bf-steel: 220 15% 45%;
+    --bf-gray: 220 10% 65%;
+    --bf-orange: 24 95% 53%;
+    --bf-orange-light: 24 95% 60%;
+    --bf-green: 142 76% 36%;
+    --bf-red: 0 72% 51%;
+    --bf-amber: 38 92% 50%;
+  }
+
+  .dark {
+    /* Bharat Forge Dark Theme - Mission Control */
+    --background: 220 25% 8%;
+    --foreground: 220 15% 92%;
+    --card: 220 20% 12%;
+    --card-foreground: 220 15% 92%;
+    --popover: 220 20% 10%;
+    --popover-foreground: 220 15% 92%;
+    
+    /* Primary: Lighter Blue for dark mode */
+    --primary: 215 70% 55%;
+    --primary-foreground: 220 30% 8%;
+    
+    /* Secondary: Dark Gray */
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 220 15% 90%;
+    
+    /* Muted: Darker Gray */
+    --muted: 220 15% 15%;
+    --muted-foreground: 220 10% 55%;
+    
+    /* Accent: Bright Orange */
+    --accent: 24 100% 58%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Destructive: Bright Red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Success: Bright Green */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Warning: Bright Amber */
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 100%;
+    
+    /* Info: Bright Blue */
+    --info: 207 90% 60%;
+    --info-foreground: 0 0% 100%;
+    
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 215 70% 55%;
+    
+    /* Sidebar: Darker */
+    --sidebar-background: 220 25% 6%;
+    --sidebar-foreground: 220 15% 85%;
+    --sidebar-primary: 215 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 20% 12%;
+    --sidebar-accent-foreground: 220 15% 90%;
+    --sidebar-border: 220 20% 15%;
+    --sidebar-ring: 215 70% 55%;
+    
+    /* Bharat Forge Brand Colors - Dark Mode */
+    --bf-navy: 215 60% 30%;
+    --bf-blue: 215 70% 55%;
+    --bf-steel: 220 15% 55%;
+    --bf-gray: 220 10% 45%;
+    --bf-orange: 24 100% 58%;
+    --bf-orange-light: 24 100% 65%;
+    --bf-green: 142 71% 45%;
+    --bf-red: 0 84% 60%;
+    --bf-amber: 38 92% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Mission Control Card Styles */
+  .mc-card {
+    @apply bg-card border border-border rounded-lg shadow-sm;
+    @apply hover:shadow-md transition-shadow duration-200;
+  }
+  
+  .mc-card-header {
+    @apply px-4 py-3 border-b border-border bg-muted/30 rounded-t-lg;
+  }
+  
+  .mc-card-title {
+    @apply text-sm font-semibold text-foreground flex items-center gap-2;
+  }
+  
+  /* KPI Card Variants */
+  .kpi-card-critical {
+    @apply border-l-4 border-l-bf-red;
+  }
+  
+  .kpi-card-warning {
+    @apply border-l-4 border-l-bf-amber;
+  }
+  
+  .kpi-card-success {
+    @apply border-l-4 border-l-bf-green;
+  }
+  
+  .kpi-card-info {
+    @apply border-l-4 border-l-bf-blue;
+  }
+  
+  /* Alert Styles */
+  .alert-critical {
+    @apply bg-red-50 dark:bg-red-950/30 border-red-500 text-red-900 dark:text-red-100;
+  }
+  
+  .alert-high {
+    @apply bg-orange-50 dark:bg-orange-950/30 border-orange-500 text-orange-900 dark:text-orange-100;
+  }
+  
+  .alert-medium {
+    @apply bg-yellow-50 dark:bg-yellow-950/30 border-yellow-500 text-yellow-900 dark:text-yellow-100;
+  }
+  
+  .alert-low {
+    @apply bg-blue-50 dark:bg-blue-950/30 border-blue-500 text-blue-900 dark:text-blue-100;
+  }
+  
+  /* Status Indicators */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+  
+  .status-online {
+    @apply bg-bf-green animate-pulse;
+  }
+  
+  .status-warning {
+    @apply bg-bf-amber;
+  }
+  
+  .status-offline {
+    @apply bg-bf-red;
+  }
+  
+  /* Heatmap Colors */
+  .heatmap-low {
+    @apply bg-green-100 dark:bg-green-900/40 text-green-900 dark:text-green-100;
+  }
+  
+  .heatmap-medium {
+    @apply bg-yellow-100 dark:bg-yellow-900/40 text-yellow-900 dark:text-yellow-100;
+  }
+  
+  .heatmap-high {
+    @apply bg-orange-100 dark:bg-orange-900/40 text-orange-900 dark:text-orange-100;
+  }
+  
+  .heatmap-critical {
+    @apply bg-red-100 dark:bg-red-900/40 text-red-900 dark:text-red-100;
+  }
+  
+  /* Gantt Chart Colors */
+  .gantt-runner {
+    @apply bg-bf-green/80 border-bf-green;
+  }
+  
+  .gantt-repeater {
+    @apply bg-bf-amber/80 border-bf-amber;
+  }
+  
+  .gantt-stranger {
+    @apply bg-bf-red/80 border-bf-red;
+  }
+  
+  .gantt-npd {
+    @apply bg-bf-blue/80 border-bf-blue;
+  }
+  
+  /* Data Table Styles */
+  .data-table-header {
+    @apply bg-muted/50 text-muted-foreground text-xs font-semibold uppercase tracking-wider;
+  }
+  
+  .data-table-row {
+    @apply hover:bg-muted/30 transition-colors;
+  }
+  
+  /* Navigation Tree */
+  .nav-tree-item {
+    @apply flex items-center gap-2 px-3 py-2 rounded-md text-sm;
+    @apply hover:bg-sidebar-accent transition-colors cursor-pointer;
+  }
+  
+  .nav-tree-item-active {
+    @apply bg-sidebar-primary text-sidebar-primary-foreground;
+  }
+  
+  /* Filter Bar */
+  .filter-bar {
+    @apply flex flex-wrap items-center gap-3 p-3 bg-card border border-border rounded-lg;
+  }
+  
+  /* Timeline Slider */
+  .timeline-slider {
+    @apply relative h-8 bg-muted rounded-full overflow-hidden;
+  }
+  
+  .timeline-slider-thumb {
+    @apply absolute top-0 h-full bg-bf-blue/20 border-x-2 border-bf-blue cursor-ew-resize;
+  }
+}
+
+@layer utilities {
+  /* Animation Utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  /* Scrollbar Styling */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
+  }
+  
+  /* Text Utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Focus Ring */
+  .ring-focus {
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+  }
+}
