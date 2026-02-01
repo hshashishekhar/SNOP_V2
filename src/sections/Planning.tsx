@@ -557,9 +557,9 @@ export function Planning() {
                   <div
                     key={die.id}
                     className={cn(
-                      'p-3 rounded-lg border border-slate-700 bg-slate-800/50 cursor-grab active:cursor-grabbing',
-                      'hover:border-slate-600 hover:bg-slate-800 transition-colors',
-                      draggedDie?.id === die.id && 'opacity-50 border-blue-500'
+                      'p-3 rounded-lg border border-slate-700 bg-slate-800/50 cursor-grab active:cursor-grabbing transition-all',
+                      'hover:border-slate-500 hover:bg-slate-800 hover:shadow-md',
+                      draggedDie?.id === die.id && 'opacity-50 border-blue-500 ring-1 ring-blue-500/50'
                     )}
                     draggable
                     onDragStart={() => handleDieDragStart({
@@ -569,17 +569,28 @@ export function Planning() {
                       type: die.category
                     })}
                   >
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge className={cn('text-xs', getDieColor(die.category))}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge className={cn('text-xs font-medium', getDieColor(die.category))}>
                         {die.category}
                       </Badge>
-                      <span className="text-sm font-medium text-white">{die.code}</span>
+                      <span className="text-sm font-semibold text-white">{die.code}</span>
                     </div>
-                    <p className="text-xs text-slate-400 truncate">{die.name}</p>
-                    <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
-                      <span>Life: {die.remainingLife.toLocaleString()}</span>
-                      <span>/</span>
-                      <span>{die.totalLife.toLocaleString()}</span>
+                    <p className="text-xs text-slate-300 truncate mb-2">{die.name}</p>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs text-slate-500">
+                        <span>Life</span>
+                        <span className="text-slate-400">{((die.remainingLife / die.totalLife) * 100).toFixed(0)}%</span>
+                      </div>
+                      <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div 
+                          className={cn(
+                            'h-full rounded-full transition-all',
+                            (die.remainingLife / die.totalLife) > 0.8 ? 'bg-green-500' :
+                            (die.remainingLife / die.totalLife) > 0.3 ? 'bg-yellow-500' : 'bg-red-500'
+                          )}
+                          style={{ width: `${(die.remainingLife / die.totalLife) * 100}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                 ))
@@ -616,14 +627,14 @@ export function Planning() {
                     key={horizon.id}
                     onClick={() => setSelectedHorizon(horizon.id)}
                     className={cn(
-                      'p-3 rounded-lg text-center transition-colors',
+                      'p-3 rounded-lg text-center transition-all',
                       selectedHorizon === horizon.id
-                        ? `${horizon.color} text-white`
-                        : 'bg-slate-700/50 text-slate-400 hover:bg-slate-700'
+                        ? `${horizon.color} text-white shadow-lg shadow-${horizon.color}/20`
+                        : 'bg-slate-700/50 text-slate-400 hover:bg-slate-700 hover:text-white border border-slate-600/50'
                     )}
                   >
-                    <div className="text-sm font-medium">{horizon.name}</div>
-                    <div className="text-xs opacity-80">{horizon.period}</div>
+                    <div className="text-sm font-semibold">{horizon.name}</div>
+                    <div className="text-xs opacity-80 mt-1">{horizon.period}</div>
                   </button>
                 ))}
               </div>
@@ -698,25 +709,25 @@ export function Planning() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="overflow-x-auto" ref={timelineRef}>
+              <div className="overflow-x-auto custom-scrollbar" ref={timelineRef}>
                 <div className="min-w-[1200px]">
                   {/* Timeline Header */}
-                  <div className="flex border-b border-slate-700 bg-slate-800/30">
-                    <div className="w-48 p-3 text-sm font-medium text-slate-400 sticky left-0 bg-slate-800/50 z-10">
+                  <div className="flex border-b border-slate-600 bg-slate-800/80">
+                    <div className="w-48 p-3 text-sm font-semibold text-slate-200 sticky left-0 bg-slate-800/90 z-10 border-r border-slate-700">
                       Line / Die
                     </div>
                     <div className="flex-1 flex">
                       {timeSlots.map((slot, idx) => (
                         <div
                           key={idx}
-                          className="flex-1 p-2 text-xs text-center text-slate-400 border-l border-slate-700/50"
+                          className="flex-1 p-2 text-xs font-medium text-slate-400 text-center border-l border-slate-700/50 bg-slate-800/50"
                           style={{ minWidth: `${60 * zoomLevel}px` }}
                         >
                           {slot}
                         </div>
                       ))}
                     </div>
-                    <div className="w-20 p-3 text-xs text-right text-slate-400 border-l border-slate-700/50">
+                    <div className="w-20 p-3 text-xs font-semibold text-slate-400 text-right border-l border-slate-700 bg-slate-800/50">
                       Actions
                     </div>
                   </div>
@@ -784,9 +795,14 @@ export function Planning() {
                                 <div className="flex-1 relative h-12" style={{ height: '48px' }}>
                                   <div
                                     className={cn(
-                                      'absolute top-2 h-8 rounded-md flex flex-col justify-center px-3 transition-all hover:brightness-110 hover:shadow-lg group',
+                                      'absolute top-2 h-8 rounded-md flex flex-col justify-center px-3 transition-all hover:shadow-md group',
                                       getDieColor(plan.type),
-                                      draggedPlan?.id === plan.id && 'opacity-50'
+                                      plan.type === 'runner' && 'bg-gradient-to-r from-green-600 to-green-500',
+                                      plan.type === 'repeater' && 'bg-gradient-to-r from-yellow-600 to-yellow-500',
+                                      plan.type === 'stranger' && 'bg-gradient-to-r from-red-600 to-red-500',
+                                      plan.type === 'npd' && 'bg-gradient-to-r from-blue-600 to-blue-500',
+                                      draggedPlan?.id === plan.id && 'opacity-50',
+                                      'border border-white/10'
                                     )}
                                     style={{
                                       left: `${(plan.startTime / timeSlots.length) * 100}%`,
@@ -795,13 +811,13 @@ export function Planning() {
                                     }}
                                     title={`${plan.dieCode}: ${plan.quantity} units | Status: ${plan.status} | Duration: ${plan.duration} | Start: ${plan.startTime}`}
                                   >
-                                    <span className="text-xs font-medium text-white truncate">{plan.dieCode}</span>
+                                    <span className="text-xs font-medium text-white truncate drop-shadow-md">{plan.dieCode}</span>
                                     
                                     {/* Editable Quantity */}
                                     {editingQuantity?.startsWith(plan.id) ? (
                                       <input
                                         type="number"
-                                        className="w-16 bg-white/20 text-white text-[10px] rounded px-1 py-0.5 focus:outline-none focus:bg-white/30"
+                                        className="w-16 bg-black/30 text-white text-[10px] rounded px-1 py-0.5 focus:outline-none focus:bg-black/50 border border-white/20"
                                         value={editingQuantity.split(':')[1]}
                                         onChange={(e) => handleQuantityChange(`${plan.id}:${e.target.value}`)}
                                         onBlur={handleQuantitySave}
@@ -814,7 +830,7 @@ export function Planning() {
                                       />
                                     ) : (
                                       <span 
-                                        className="text-white/80 text-[10px] cursor-text hover:text-white"
+                                        className="text-white/90 text-[10px] cursor-text hover:text-white font-medium"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           handleQuantityEditStart(plan);
@@ -826,18 +842,18 @@ export function Planning() {
                                     
                                     {/* Left Resize Handle */}
                                     <div
-                                      className="absolute left-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-r border-white/20"
+                                      className="absolute left-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 border-r border-white/10"
                                       onMouseDown={(e) => handleResizeStart(e, plan, 'left')}
                                     >
-                                      <div className="w-1 h-4 bg-white/50 rounded-full" />
+                                      <div className="w-1 h-4 bg-white/60 rounded-full" />
                                     </div>
                                     
                                     {/* Right Resize Handle */}
                                     <div
-                                      className="absolute right-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-l border-white/20"
+                                      className="absolute right-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 border-l border-white/10"
                                       onMouseDown={(e) => handleResizeStart(e, plan, 'right')}
                                     >
-                                      <div className="w-1 h-4 bg-white/50 rounded-full" />
+                                      <div className="w-1 h-4 bg-white/60 rounded-full" />
                                     </div>
                                   </div>
                                 </div>
@@ -862,6 +878,27 @@ export function Planning() {
                     );
                   })}
                 </div>
+              </div>
+              
+              {/* Timeline Axis */}
+              <div className="flex border-t-2 border-slate-600 bg-slate-800/50">
+                <div className="w-48 p-2 text-xs text-slate-500 sticky left-0 bg-slate-800/90 z-10 border-r border-slate-700">
+                  Timeline
+                </div>
+                <div className="flex-1 flex relative h-6">
+                  {timeSlots.map((slot, idx) => (
+                    <div
+                      key={idx}
+                      className="flex-1 border-l border-slate-700/30 relative"
+                      style={{ minWidth: `${60 * zoomLevel}px` }}
+                    >
+                      {idx % 4 === 0 && (
+                        <div className="absolute bottom-0 left-0 w-0.5 h-2 bg-slate-500" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="w-20 border-l border-slate-700" />
               </div>
             </CardContent>
           </Card>
