@@ -536,6 +536,10 @@ export function DieManagement() {
             
             {/* Die List */}
             <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              <p className="text-xs text-slate-500 flex items-center gap-1 mb-2">
+                <AlertTriangle className="w-3 h-3" />
+                Click on a die to manage its unavailability
+              </p>
               {diesLoading ? (
                 <div className="text-center text-slate-400 py-8">Loading dies...</div>
               ) : filteredDies.length === 0 ? (
@@ -544,13 +548,23 @@ export function DieManagement() {
                 filteredDies.map((die) => (
                   <div
                     key={die.id}
-                    className="flex items-center gap-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700 hover:border-slate-600 transition-colors cursor-pointer"
+                    className={cn(
+                       'flex items-center gap-4 p-4 rounded-lg border transition-colors cursor-pointer',
+                       selectedDie?.id === die.id 
+                         ? 'bg-orange-500/10 border-orange-500/50'
+                         : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
+                     )}
                     onClick={() => handleDieClick(die)}
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-1">
                         <span className="text-sm font-medium text-white">{die.code}</span>
                         {getCategoryBadge(die.category)}
+                        {selectedDie?.id === die.id && (
+                          <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">
+                            Selected
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-slate-400">{die.name}</p>
                     </div>
@@ -639,7 +653,15 @@ export function DieManagement() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Add Unavailability Button */}
-            <Dialog open={addUnavailabilityOpen} onOpenChange={setAddUnavailabilityOpen}>
+            <Dialog 
+              open={addUnavailabilityOpen} 
+              onOpenChange={(open) => {
+                setAddUnavailabilityOpen(open);
+                if (open && selectedDie) {
+                  setNewUnavailability(prev => ({ ...prev, dieId: selectedDie.id }));
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button className="bg-orange-600 hover:bg-orange-700">
                   <Plus className="w-4 h-4 mr-2" />
