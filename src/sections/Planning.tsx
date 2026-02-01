@@ -102,7 +102,13 @@ export function Planning() {
   const [addPlanOpen, setAddPlanOpen] = useState(false);
   const [draggedPlan, setDraggedPlan] = useState<Plan | null>(null);
   const [draggedDie, setDraggedDie] = useState<DraggableDie | null>(null);
-  const [resizingPlan, setResizingPlan] = useState<{ id: string; startX: number; startDuration: number } | null>(null);
+  const [resizingPlan, setResizingPlan] = useState<{
+    id: string;
+    side: 'left' | 'right';
+    startX: number;
+    startDuration: number;
+    startTime: number;
+  } | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [timelineStart, setTimelineStart] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
@@ -180,17 +186,18 @@ export function Planning() {
   // Handle drag over
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
   };
 
   // Handle drop on line timeline
   const handleDropOnLine = (lineId: string, e: React.DragEvent) => {
     e.preventDefault();
-    if (!timelineRef.current) return;
+    e.stopPropagation();
     
-    const rect = timelineRef.current.getBoundingClientRect();
+    const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const dropPosition = (x / rect.width) * timeSlots.length;
-    const newStartTime = Math.max(0, Math.floor(dropPosition));
+    const newStartTime = Math.max(0, Math.min(Math.floor(dropPosition), timeSlots.length - 1));
 
     if (draggedPlan) {
       setPlans(prev => prev.map(p => 
@@ -218,12 +225,14 @@ export function Planning() {
   };
 
   // Handle resize start
-  const handleResizeStart = (e: React.MouseEvent, plan: Plan) => {
+  const handleResizeStart = (e: React.MouseEvent, plan: Plan, side: 'left' | 'right') => {
     e.stopPropagation();
     setResizingPlan({
       id: plan.id,
+      side,
       startX: e.clientX,
       startDuration: plan.duration,
+      startTime: plan.startTime,
     });
     setDraggedPlan(null);
     setDraggedDie(null);
@@ -237,13 +246,29 @@ export function Planning() {
     const slotWidth = rect.width / timeSlots.length;
     const deltaX = e.clientX - resizingPlan.startX;
     const deltaSlots = deltaX / slotWidth;
-    const newDuration = Math.max(1, Math.round(resizingPlan.startDuration + deltaSlots));
     
-    setPlans(prev => prev.map(p => 
-      p.id === resizingPlan.id 
-        ? { ...p, duration: newDuration }
-        : p
-    ));
+    if (resizingPlan.side === 'left') {
+      // Left resize: adjust start time and duration
+      const newStartTime = Math.max(0, Math.round(resizingPlan.startTime + deltaSlots));
+      const maxNewStartTime = resizingPlan.startTime + resizingPlan.startDuration - 1;
+      const clampedStartTime = Math.min(newStartTime, maxNewStartTime);
+      const newDuration = resizingPlan.startDuration + resizingPlan.startTime - clampedStartTime;
+      
+      setPlans(prev => prev.map(p => 
+        p.id === resizingPlan.id 
+          ? { ...p, startTime: clampedStartTime, duration: Math.max(1, newDuration) }
+          : p
+      ));
+    } else {
+      // Right resize: only adjust duration
+      const newDuration = Math.max(1, Math.round(resizingPlan.startDuration + deltaSlots));
+      
+      setPlans(prev => prev.map(p => 
+        p.id === resizingPlan.id 
+          ? { ...p, duration: newDuration }
+          : p
+      ));
+    }
   }, [resizingPlan, timeSlots.length]);
 
   // Handle resize end
@@ -635,8 +660,9 @@ export function Planning() {
                     <span>Drag to reschedule</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <ChevronLeftIcon className="w-4 h-4" />
                     <ChevronRightIcon className="w-4 h-4" />
-                    <span>Drag edge to resize</span>
+                    <span>Drag edges to resize</span>
                   </div>
                 </div>
               </div>
@@ -701,9 +727,15 @@ export function Planning() {
                             linePlans.map((plan) => (
                               <div
                                 key={plan.id}
-                                className="flex items-center border-b border-slate-700/30 hover:bg-slate-800/30"
+                                className={cn(
+                                  'flex items-center border-b border-slate-700/30 hover:bg-slate-800/30',
+                                  draggedDie && 'pointer-events-none opacity-50'
+                                )}
                                 draggable
-                                onDragStart={() => handlePlanDragStart(plan)}
+                                onDragStart={(e) => {
+                                  e.stopPropagation();
+                                  handlePlanDragStart(plan);
+                                }}
                               >
                                 <div className="w-48 p-2 sticky left-0 bg-slate-800/50 z-10 flex items-center gap-2">
                                   <GripVertical className="w-4 h-4 text-slate-500 cursor-grab" />
@@ -718,7 +750,7 @@ export function Planning() {
                                   </div>
                                 </div>
                                 
-                                {/* Plan Bar with Resize Handle */}
+                                {/* Plan Bar with Resize Handles */}
                                 <div className="flex-1 relative h-12" style={{ height: '48px' }}>
                                   <div
                                     className={cn(
@@ -731,15 +763,23 @@ export function Planning() {
                                       width: `${(plan.duration / timeSlots.length) * 100}%`,
                                       minWidth: '60px',
                                     }}
-                                    title={`${plan.dieCode}: ${plan.quantity} units | Status: ${plan.status} | Duration: ${plan.duration}`}
+                                    title={`${plan.dieCode}: ${plan.quantity} units | Status: ${plan.status} | Duration: ${plan.duration} | Start: ${plan.startTime}`}
                                   >
                                     <span className="text-xs font-medium text-white truncate">{plan.dieCode}</span>
                                     <span className="text-white/80 text-[10px]">{plan.quantity} units</span>
                                     
-                                    {/* Resize Handle */}
+                                    {/* Left Resize Handle */}
                                     <div
-                                      className="absolute right-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart(e, plan)}
+                                      className="absolute left-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-r border-white/20"
+                                      onMouseDown={(e) => handleResizeStart(e, plan, 'left')}
+                                    >
+                                      <div className="w-1 h-4 bg-white/50 rounded-full" />
+                                    </div>
+                                    
+                                    {/* Right Resize Handle */}
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-l border-white/20"
+                                      onMouseDown={(e) => handleResizeStart(e, plan, 'right')}
                                     >
                                       <div className="w-1 h-4 bg-white/50 rounded-full" />
                                     </div>
